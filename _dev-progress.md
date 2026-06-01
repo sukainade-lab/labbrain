@@ -36,3 +36,9 @@
 
 ## Next
 `/2-eo-dev-plan story-1` → plan S1 (Lab Onboarding & Auth).
+
+---
+**Last updated:** 2026-06-01 · **Current sprint:** 1 / ~5 · **Last command:** `/eo-guide`
+
+## Reconciliation log
+- 2026-06-01 — `/eo-guide`: filesystem matches tracker (all S1–S5 ⬜, no plans, git local without remote). No diff. Phase = `ready-to-plan`.
