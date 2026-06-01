@@ -10,11 +10,14 @@ import {
   type Interval
 } from "@/lib/pricing/plans";
 import { startCheckout } from "@/lib/payment/checkout-client";
+import { parseResume, checkoutCtaState, type Resume } from "@/lib/payment/resume";
 
 // AC-4.1 — pricing page: Starter 35 / Pro 70 JOD, monthly⇄annual toggle (annual −25%).
 // Plan/cap data comes from lib/pricing/plans (single source of truth).
 // AC-4.2 — the CTA starts a real Stripe Checkout via /api/checkout (authenticated
-// tenants → Stripe; visitors → /signup carrying the chosen plan).
+// tenants → Stripe; visitors → /signup carrying the chosen plan). A resumed pick
+// (?plan=&interval= from the post-signup round-trip) pre-selects the interval and
+// flags the chosen card so the purchase picks up exactly where it left off.
 const DISCOUNT_PCT = Math.round(ANNUAL_DISCOUNT * 100);
 
 function Jod() {
@@ -22,8 +25,17 @@ function Jod() {
   return <bdi>JOD</bdi>;
 }
 
+// Read the carried plan choice once, client-side, via a lazy initializer so the
+// page stays statically rendered (no useSearchParams → no Suspense boundary).
+function readResume(): Resume | null {
+  if (typeof window === "undefined") return null;
+  const sp = new URLSearchParams(window.location.search);
+  return parseResume({ plan: sp.get("plan"), interval: sp.get("interval") });
+}
+
 export default function PricingPage() {
-  const [interval, setInterval] = useState<Interval>("month");
+  const [resume] = useState<Resume | null>(readResume);
+  const [interval, setInterval] = useState<Interval>(resume?.interval ?? "month");
   const [pendingPlan, setPendingPlan] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -87,11 +99,21 @@ export default function PricingPage() {
         {PRICING_PLANS.map((plan) => {
           const perMonth = monthlyEquivalent(plan, interval);
           const yearTotal = intervalTotal(plan, "year");
+          const cta = checkoutCtaState({
+            planId: plan.id,
+            pendingPlan,
+            resumePlan: resume?.plan ?? null
+          });
+          const resumed = resume?.plan === plan.id;
           return (
             <div
               key={plan.id}
               className={`rounded-2xl border bg-slate-900/40 p-8 ${
-                plan.highlight ? "border-amber-500" : "border-slate-700"
+                resumed
+                  ? "border-amber-500 ring-2 ring-amber-500/50"
+                  : plan.highlight
+                    ? "border-amber-500"
+                    : "border-slate-700"
               }`}
             >
               <h2 className="text-xl font-semibold text-slate-100">{plan.nameAr}</h2>
@@ -120,10 +142,11 @@ export default function PricingPage() {
               <button
                 type="button"
                 onClick={() => onChoosePlan(plan.id)}
-                disabled={pendingPlan !== null}
+                disabled={cta.disabled}
+                aria-busy={cta.busy}
                 className="mt-8 block w-full min-h-[44px] rounded-lg bg-amber-600 px-6 py-3 text-center font-medium text-white hover:bg-amber-500 disabled:opacity-60"
               >
-                {pendingPlan === plan.id ? "جارٍ التحويل…" : "ابدأ الآن"}
+                {cta.label}
               </button>
             </div>
           );
@@ -131,7 +154,12 @@ export default function PricingPage() {
       </div>
 
       {error && (
-        <p role="alert" className="mt-6 text-center text-sm text-red-400">
+        <p
+          role="alert"
+          className="mt-6 flex items-center justify-center gap-2 text-center text-sm text-red-400"
+        >
+          {/* icon + role=alert so the failure isn't signalled by colour alone */}
+          <span aria-hidden="true">⚠️</span>
           {error}
         </p>
       )}

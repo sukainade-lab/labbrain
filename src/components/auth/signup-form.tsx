@@ -5,7 +5,15 @@ import { useState } from "react";
 const field =
   "w-full rounded-lg border border-[#334155] bg-[#0F172A] px-4 py-3 text-slate-100 placeholder:text-slate-500 focus:border-[#D97706] focus:outline-none";
 
-export function SignupForm({ token }: { token?: string }) {
+export function SignupForm({
+  token,
+  plan,
+  interval
+}: {
+  token?: string;
+  plan?: string;
+  interval?: string;
+}) {
   const [labName, setLabName] = useState("");
   const [adminName, setAdminName] = useState("");
   const [email, setEmail] = useState("");
@@ -50,7 +58,10 @@ export function SignupForm({ token }: { token?: string }) {
           adminName,
           email,
           password,
-          ...(token ? { inviteToken: token } : {})
+          ...(token ? { inviteToken: token } : {}),
+          // Carry a logged-out plan pick so checkout resumes post-confirmation.
+          ...(plan ? { plan } : {}),
+          ...(interval ? { interval } : {})
         })
       });
       const data = await res.json();

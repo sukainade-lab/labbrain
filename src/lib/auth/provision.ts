@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { type SignupInput } from "@/lib/validation/auth";
 import { countSeats, getPlanLimit } from "@/lib/auth/seats";
 import { sendWelcomeEmail } from "@/lib/email/resend";
+import { onboardingNext, type Resume } from "@/lib/payment/resume";
 
 // Default post-confirmation destination (AC-1.2). The /auth/confirm route reads
 // ?next and falls back here.
@@ -28,7 +29,10 @@ export type SignupResult = {
 // are enabled — sends the 24h verification email with a redirect to /onboarding
 // (AC-1.1/1.2). Tenant + users rows are written with the service role because no
 // client RLS policy can INSERT a tenant (provisioning is server-side by design).
-export async function provisionSignup(input: SignupInput): Promise<SignupResult> {
+export async function provisionSignup(
+  input: SignupInput,
+  resume: Resume | null = null
+): Promise<SignupResult> {
   const admin = createAdminClient();
   const appUrl = process.env.APP_URL ?? "http://localhost:3000";
   const anon = createClient(
@@ -80,7 +84,11 @@ export async function provisionSignup(input: SignupInput): Promise<SignupResult>
     email: input.email,
     password: input.password,
     options: {
-      emailRedirectTo: `${appUrl}/auth/confirm?next=${encodeURIComponent(ONBOARDING_PATH)}`,
+      // A logged-out plan pick rides through here: after confirming their email
+      // the user lands on onboarding still holding the chosen plan, so the
+      // purchase resumes instead of dead-ending (AC-4.2). Invite-joins carry no
+      // plan, so this is just /onboarding for them.
+      emailRedirectTo: `${appUrl}/auth/confirm?next=${encodeURIComponent(onboardingNext(resume))}`,
       data: { lab_name: input.labName, full_name: input.adminName }
     }
   });

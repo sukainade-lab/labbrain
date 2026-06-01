@@ -79,7 +79,10 @@ export default function DashboardPage() {
           role="alert"
           className="mt-8 rounded-xl border border-red-900/60 bg-red-950/30 p-6 text-center"
         >
-          <p className="text-sm text-red-300">تعذّر تحميل الإحصائيات.</p>
+          {/* icon + role=alert so the failure isn't signalled by colour alone */}
+          <p className="text-sm text-red-300">
+            <span aria-hidden="true">⚠️ </span>تعذّر تحميل الإحصائيات.
+          </p>
           <button
             type="button"
             onClick={load}
@@ -89,7 +92,7 @@ export default function DashboardPage() {
           </button>
         </div>
       ) : (
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        <div className="mt-8 grid gap-4 sm:grid-cols-3" aria-busy={loading}>
           {cards.map((s) => (
             <div
               key={s.label}
