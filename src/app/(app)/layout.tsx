@@ -12,6 +12,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <Link href="/dashboard" className="block hover:text-amber-400">
             لوحة التحكم
           </Link>
+          <Link href="/documents" className="block hover:text-amber-400">
+            الوثائق
+          </Link>
           <Link href="/admin" className="block hover:text-amber-400">
             الإدارة
           </Link>
