@@ -159,6 +159,26 @@ describe.skipIf(!hasLiveSupabase)("Story 2 — document route handlers", () => {
     expect(count).toBe(data.chunkCount);
   });
 
+  it("@AC-2.1 POST a DOCX the browser mislabels as octet-stream → 201 (extension fallback)", async () => {
+    const tenantId = await makeTenant("OctetDocx");
+    h.state.user = { id: "u" };
+    h.state.me = { tenant_id: tenantId };
+
+    // Browsers routinely tag DOCX uploads "" or octet-stream; resolveMime must
+    // recover the real type from the .docx extension so a valid file isn't
+    // wrongly 400'd (AC-2.1).
+    const res = await postFile(pdfFile(2048, "clause.docx", "application/octet-stream"));
+    const data = await res.json();
+    expect(res.status).toBe(201);
+    expect(data.status).toBe("ready");
+    const { data: doc } = await admin
+      .from("documents")
+      .select("storage_path")
+      .eq("id", data.documentId)
+      .single();
+    pathsToReap.push(doc!.storage_path);
+  });
+
   it("@AC-2.6 POST against a tenant at the doc cap → 402", async () => {
     const tenantId = await makeTenant("AtCap");
     h.state.user = { id: "u" };

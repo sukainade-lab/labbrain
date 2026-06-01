@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { uploadMetaSchema, MAX_UPLOAD_BYTES } from "@/lib/validation/documents";
+import { uploadMetaSchema, MAX_UPLOAD_BYTES, resolveMime } from "@/lib/validation/documents";
 import { ingestDocument } from "@/lib/documents/ingest";
 import { DocLimitError } from "@/lib/documents/limits";
 
@@ -37,9 +37,11 @@ export async function POST(req: Request) {
     );
   }
 
+  // Browsers often mislabel DOCX/XLSX as octet-stream/"" — fall back to the
+  // filename extension so valid Office files aren't wrongly rejected (AC-2.1).
   const meta = uploadMetaSchema.safeParse({
     filename,
-    mimeType: file.type,
+    mimeType: resolveMime(filename, file.type) ?? file.type,
     sizeBytes: file.size
   });
   if (!meta.success) {

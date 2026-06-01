@@ -5,7 +5,8 @@ import {
   uploadMetaSchema,
   ACCEPTED_MIME,
   MAX_UPLOAD_BYTES,
-  extForMime
+  extForMime,
+  resolveMime
 } from "@/lib/validation/documents";
 import {
   PLAN_DOC_LIMITS,
@@ -104,6 +105,25 @@ describe("validation/documents.ts — upload guard (AC-2.1)", () => {
   it("maps MIME back to extension", () => {
     expect(extForMime(ACCEPTED_MIME.docx)).toBe("docx");
     expect(extForMime("application/zip")).toBeNull();
+  });
+
+  it("trusts an already-accepted declared MIME", () => {
+    expect(resolveMime("report.pdf", ACCEPTED_MIME.pdf)).toBe(ACCEPTED_MIME.pdf);
+    expect(resolveMime("sheet.xlsx", ACCEPTED_MIME.xlsx)).toBe(ACCEPTED_MIME.xlsx);
+  });
+
+  it("infers the MIME from extension when the browser mislabels DOCX/XLSX", () => {
+    // Browsers frequently report "" or octet-stream for Office files (AC-2.1).
+    expect(resolveMime("clause.docx", "")).toBe(ACCEPTED_MIME.docx);
+    expect(resolveMime("clause.docx", "application/octet-stream")).toBe(ACCEPTED_MIME.docx);
+    expect(resolveMime("data.xlsx", null)).toBe(ACCEPTED_MIME.xlsx);
+    expect(resolveMime("scan.pdf", undefined)).toBe(ACCEPTED_MIME.pdf);
+  });
+
+  it("returns null for an unknown extension with no usable declared type", () => {
+    expect(resolveMime("notes.txt", "")).toBeNull();
+    expect(resolveMime("archive.zip", "application/octet-stream")).toBeNull();
+    expect(resolveMime("noext", "")).toBeNull();
   });
 });
 

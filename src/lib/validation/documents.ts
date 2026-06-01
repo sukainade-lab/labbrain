@@ -36,3 +36,21 @@ export function extForMime(mime: string): AcceptedExt | null {
   );
   return entry ? entry[0] : null;
 }
+
+// Resolve the canonical MIME for an upload. Browsers reliably tag PDFs but often
+// report DOCX/XLSX as "" or "application/octet-stream"; without this fallback a
+// valid Office file the AC promises to accept would be rejected. We trust an
+// already-accepted declared type, otherwise infer from the filename extension.
+const EXT_TO_MIME: Record<string, string> = {
+  pdf: ACCEPTED_MIME.pdf,
+  docx: ACCEPTED_MIME.docx,
+  xlsx: ACCEPTED_MIME.xlsx
+};
+
+export function resolveMime(filename: string, declaredType: string | undefined | null): string | null {
+  if (declaredType && (ACCEPTED_MIME_VALUES as readonly string[]).includes(declaredType)) {
+    return declaredType;
+  }
+  const ext = filename.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1];
+  return ext ? EXT_TO_MIME[ext] ?? null : null;
+}
