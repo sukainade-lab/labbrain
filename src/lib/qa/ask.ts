@@ -54,8 +54,12 @@ export async function ask(params: {
     found = false;
   } else {
     answer = await generateAnswer({ question, chunks, lang });
-    // The model can still refuse if the excerpts are off-topic (AC-3.3).
+    // The model can still refuse if the excerpts are off-topic (AC-3.3). The
+    // grounding prompt always emits the Arabic sentinel, so normalise a refusal
+    // back to the user's language — AC-3.5 requires "not found" in their language,
+    // whether the gate (no chunks) or the model produced it.
     found = !isNotFoundAnswer(answer);
+    if (!found) answer = NOT_FOUND[lang];
     citations = found ? buildCitations(chunks) : [];
   }
 

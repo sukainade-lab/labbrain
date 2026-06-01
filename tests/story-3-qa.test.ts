@@ -22,7 +22,7 @@ vi.mock("@/lib/ai/answer", () => ({ generateAnswer: vi.fn() }));
 import { ask } from "@/lib/qa/ask";
 import { embedTexts } from "@/lib/ai/embeddings";
 import { generateAnswer } from "@/lib/ai/answer";
-import { NOT_FOUND_AR } from "@/lib/qa/prompt";
+import { NOT_FOUND_AR, NOT_FOUND } from "@/lib/qa/prompt";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -189,5 +189,26 @@ describe.skipIf(!hasLiveSupabase)("Story 3 — Q&A orchestrator (live)", () => {
       .limit(1);
     expect(error).toBeNull();
     expect(rows![0]).toMatchObject({ found_answer: false, question_lang: "ar" });
+  });
+
+  it("@AC-3.5 model refuses on off-topic chunks → refusal in the user's language", async () => {
+    // Chunks ARE retrieved (gate cleared), but the model judges them off-topic and
+    // emits the Arabic sentinel. For an English question the refusal must come back
+    // in English, not the raw Arabic sentinel the grounding prompt dictates.
+    vi.mocked(embedTexts).mockResolvedValueOnce([basisArray(0)]);
+    vi.mocked(generateAnswer).mockResolvedValueOnce(NOT_FOUND_AR);
+
+    const result = await ask({
+      supabase: client,
+      tenantId,
+      userId,
+      question: "What is the audit retention policy for purchase orders?"
+    });
+
+    expect(generateAnswer).toHaveBeenCalledTimes(1); // chunks existed → model ran
+    expect(result.found).toBe(false);
+    expect(result.lang).toBe("en");
+    expect(result.answer).toBe(NOT_FOUND.en);
+    expect(result.citations).toEqual([]);
   });
 });
