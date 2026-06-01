@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/payment/stripe";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { handleStripeEvent } from "@/lib/payment/stripe/activation";
 
-// AC-4.3 — Stripe webhook: signature-verified; activates/deactivates tenants.
-// Stub: signature verification + event routing are wired; tenant DB writes land in S4 implementation.
+// AC-4.3 — Stripe webhook: signature-verified, then applied to the DB.
+// checkout.session.completed → activate; subscription.deleted → inactive;
+// invoice.payment_failed → past_due. Idempotent (see activation.ts).
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
@@ -23,18 +26,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  switch (event.type) {
-    case "checkout.session.completed":
-      // TODO(S4): set tenant plan status = 'active', upsert subscriptions row, send activation email.
-      break;
-    case "customer.subscription.deleted":
-      // TODO(S4): set tenant status = 'inactive'.
-      break;
-    case "invoice.payment_failed":
-      // TODO(S4): set tenant status = 'past_due'.
-      break;
-    default:
-      break;
+  try {
+    await handleStripeEvent(createAdminClient(), event);
+  } catch {
+    // Return 500 so Stripe retries; the handlers are idempotent, so a retry is safe.
+    return NextResponse.json({ error: "webhook handler failed" }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });

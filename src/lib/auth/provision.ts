@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { type SignupInput } from "@/lib/validation/auth";
 import { countSeats, getPlanLimit } from "@/lib/auth/seats";
+import { sendWelcomeEmail } from "@/lib/email/resend";
 
 // Default post-confirmation destination (AC-1.2). The /auth/confirm route reads
 // ?next and falls back here.
@@ -107,6 +108,23 @@ export async function provisionSignup(input: SignupInput): Promise<SignupResult>
       .from("invitations")
       .update({ accepted_at: new Date().toISOString() })
       .eq("id", invitationId);
+  }
+
+  // Welcome email (AC-4.4) — sent on every account creation, regardless of plan.
+  // Best-effort: a Resend outage must never fail an otherwise-good signup, so we
+  // swallow errors here (the auth user + tenant link are already committed).
+  try {
+    const { data: tenant } = await admin
+      .from("tenants")
+      .select("name")
+      .eq("id", tenantId)
+      .single();
+    await sendWelcomeEmail(input.email, {
+      labName: input.labName?.trim() || tenant?.name || "مختبرك",
+      adminName: input.adminName
+    });
+  } catch {
+    // Non-fatal — provisioning succeeded; the welcome email is a nicety.
   }
 
   return { userId, tenantId, role };
