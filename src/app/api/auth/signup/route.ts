@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { signupSchema } from "@/lib/validation/auth";
-import { provisionSignup, SignupError, ONBOARDING_PATH } from "@/lib/auth/provision";
+import { provisionSignup, SignupError } from "@/lib/auth/provision";
+import { parseResume, onboardingNext } from "@/lib/payment/resume";
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
@@ -12,10 +13,17 @@ export async function POST(req: Request) {
     );
   }
 
+  // Carried plan choice (logged-out → /signup → here). Validated by allow-list;
+  // anything off-list becomes null and the flow falls back to plain onboarding.
+  const resume = parseResume({
+    plan: (body as { plan?: string })?.plan,
+    interval: (body as { interval?: string })?.interval
+  });
+
   try {
-    const result = await provisionSignup(parsed.data);
+    const result = await provisionSignup(parsed.data, resume);
     return NextResponse.json(
-      { ok: true, tenantId: result.tenantId, next: ONBOARDING_PATH },
+      { ok: true, tenantId: result.tenantId, next: onboardingNext(resume) },
       { status: 201 }
     );
   } catch (err) {

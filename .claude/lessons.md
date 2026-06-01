@@ -45,6 +45,21 @@ never soft-failed. Fixed in `feat/s3-qa` (`fd96333`); lands on `main` with PR #3
 **Effect on scoring:** Architecture hat capped at 8 for any story shipped without a
 confirmed-green CI run on its PR.
 
+### L4 — Review must walk the user-reachable end-to-end path, not audit files in isolation (2026-06-01, S4)
+**Trigger:** S4's `/4-eo-review` passed clean (no 🔴) — every file was correct on its
+own: `createCheckoutSession`, `POST /api/checkout`, the webhook handlers, the price
+map all audited fine. But `/5-eo-score` Product hat hit **6**: the pricing CTA still
+linked to `/signup` and *nothing in the app POSTed to `/api/checkout`*. The money loop
+existed file-by-file with no caller — a dead end no per-file audit caught, because each
+file was individually valid. Sibling to L1 (test the HTTP seam), but for the review gate.
+**Rule:** in `/4-eo-review`, for any story that delivers a user flow, trace the path a
+real user takes click-by-click (CTA → handler → effect) and confirm each hop has a
+caller. Grep that every new API route has at least one UI/caller reference. A file that
+compiles and tests green can still be unreachable; "wired end-to-end" is a distinct check
+from "each file is correct."
+**Effect on scoring:** Product hat capped at 8 for any story whose primary user flow has
+an orphaned step (a route/handler with no caller, or a CTA that doesn't reach it).
+
 ## Archived lessons
 
 None.

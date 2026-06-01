@@ -168,6 +168,39 @@ describe.skipIf(!hasLiveSupabase)("Story 1 — route handlers", () => {
     tenantsToReap.push(data.tenantId);
   });
 
+  // AC-4.2 — a logged-out plan pick rides in on the signup body; the response
+  // `next` (and the confirmation email's redirect) must carry it so checkout
+  // resumes after the account is confirmed instead of dead-ending.
+  it("@AC-4.2 POST /api/auth/signup with a carried plan → 201 + resume next", async () => {
+    const res = await postJson(signupPOST, {
+      labName: "Resume Lab",
+      adminName: "Owner Resume",
+      email: uniq("resume"),
+      password: PASSWORD,
+      plan: "pro",
+      interval: "year"
+    });
+    const data = await res.json();
+    expect(res.status).toBe(201);
+    expect(data.next).toBe("/onboarding?plan=pro&interval=year");
+    tenantsToReap.push(data.tenantId);
+  });
+
+  it("@AC-4.2 POST /api/auth/signup with an off-list plan → falls back to plain onboarding", async () => {
+    const res = await postJson(signupPOST, {
+      labName: "Bad Plan Lab",
+      adminName: "Owner Bad",
+      email: uniq("badplan"),
+      password: PASSWORD,
+      plan: "enterprise",
+      interval: "year"
+    });
+    const data = await res.json();
+    expect(res.status).toBe(201);
+    expect(data.next).toBe("/onboarding");
+    tenantsToReap.push(data.tenantId);
+  });
+
   it("@AC-1.1 POST /api/auth/signup duplicate email → 409", async () => {
     const email = uniq("dup");
     const first = await postJson(signupPOST, {
