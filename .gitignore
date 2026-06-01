@@ -1,0 +1,45 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+
+# production
+/build
+/dist
+
+# env — never commit real secrets
+.env
+.env.local
+.env*.local
+
+# secrets
+/docs/secrets/
+
+# logs
+*.log
+.bootstrap-dev.log
+.bootstrap-dev.pid
+.bootstrap-failures.log
+npm-debug.log*
+
+# testing
+/coverage
+
+# misc
+.DS_Store
+__MACOSX/
+*.tsbuildinfo
+
+# supabase local
+/supabase/.branches
+/supabase/.temp
+
+# EO-Brain strategy source (phases 0-4) — relevant docs are copied into
+# architecture/ and docs/ux-reference/; keep the raw brain out of the code repo.
+/EO-Brain/
+/eo-brainstorming-foundry/

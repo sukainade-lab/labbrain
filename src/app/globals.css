@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --navy: #1b2a3d;
+  --amber: #d97706;
+  --amber-light: #f59e0b;
+  --bg: #0f172a;
+}
+
+html {
+  font-family: "IBM Plex Arabic", "IBM Plex Sans", system-ui, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: #e2e8f0;
+}
+
+/* English technical terms inside Arabic text stay LTR and visually isolated. */
+.bidi-term {
+  unicode-bidi: isolate;
+  direction: ltr;
+}
