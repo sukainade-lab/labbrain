@@ -44,7 +44,10 @@ Then **v2 planning** (`/2-eo-dev-plan story-6`) when ready — S6 Tap Payments i
 Standing (surface, do not work around): **rotate the GitHub PAT** (pasted plaintext earlier — live/active for `sukainade-lab`); `.claude/settings.json` SessionStart hook still awaiting explicit approval.
 
 ---
-**Last updated:** 2026-06-02 · **Current sprint:** 1 / ~5 · **Last command:** `/7-eo-ship story-5` (S5 shipped → PR #5 merged `9bc1af3`; both CI jobs green; **Weekend MVP complete**). Next: live Contabo cutover (founder-gated) or `/8-eo-retro`.
+**Last updated:** 2026-06-02 · **Current sprint:** 1 / ~5 (closed) · **Last command:** `/8-eo-retro` (Sprint-1 retro → `docs/retros/2026-06-02.md`; avg first-pass composite 87.6, focus: UX `<bdi>` discipline → new lesson L5). Next: live Contabo cutover (founder-gated) or `/2-eo-dev-plan story-6` to open Sprint 2.
+
+## Retros
+- 2026-06-02 — `docs/retros/2026-06-02.md` (Sprint 1 / Weekend MVP S1–S5; 5 PRs shipped; first-pass avg composite 87.6, all bridged to 100; focus hat: UX — repeat `<bdi>` miss → L5; process proposals P1 CI-before-score, P2 ingester regex).
 
 ## Reconciliation log
 - 2026-06-01 — `/eo-guide`: filesystem matches tracker (all S1–S5 ⬜, no plans, git local without remote). No diff. Phase = `ready-to-plan`.
