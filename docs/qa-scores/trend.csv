@@ -16,3 +16,4 @@ date,story,product,architecture,engineering,qa,ux,composite,decision
 2026-06-02,S5-deploy,10,10,10,10,10,100,ship
 2026-06-02,S5-deploy,10,10,10,10,10,100,shipped-pr5-9bc1af3
 2026-06-02,S6-tap-payments,9,8,9,9,9,88,bridge-L3-pending-ci
+2026-06-02,S6-tap-payments,9,9,9,9,9,90,ship-ci-green-pr8-awaiting-merge

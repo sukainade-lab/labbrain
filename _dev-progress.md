@@ -19,7 +19,7 @@
 
 | Story | Title | Loop | Status |
 |-------|-------|------|--------|
-| S6 | Tap Payments card integration (JOD + KWD + SAR) | money | 🧪 scoring 2026-06-02 · **composite 88** (P9 A8 E9 Q9 U9) → CI-green lifts A→9 = **90** · AC-6.1…6.6 green · 6/6 ACs @AC-tagged · tests 270/270 · tsc/lint/build green · review clean · bridge: fixed `sk_live_` leak in `.env.example` (E 7→9) · score `docs/qa-scores/2026-06-02-0214-S6-tap-payments.md` · branch `feat/s6-tap-payments` |
+| S6 | Tap Payments card integration (JOD + KWD + SAR) | money | 🚦 ship-ready (awaiting merge auth) 2026-06-02 · **composite 90** (P9 A9 E9 Q9 U9, CI green) · **PR #8** open, CI run `26787911025` success · AC-6.1…6.6 green · 6/6 ACs @AC-tagged · tests 270/270 · score `docs/qa-scores/2026-06-02-0214-S6-tap-payments.md` · branch `feat/s6-tap-payments` · ⛔ do NOT merge without founder naming PR #8 |
 | S7 | SMS 2FA via Unifonic (Jordan numbers) | auth |
 | S8 | Founder super-admin panel | domain |
 | S9 | Audit export — Q&A log as PDF | domain |
@@ -35,7 +35,12 @@
 ⬜ not started · 🟡 in progress · ✅ shipped (PR merged + score ≥90)
 
 ## Next
-**Sprint 2 — S6 (Tap Payments) scored 88, one bridge applied, CI-pending for 90.** `/5-eo-score` (5 parallel hats): P9 A8 E9 Q9 U9. Engineering was 7 (the `.env.example` Tap comment embedded `sk_live_`, tripping the S5 leak guard → suite red); `/6-eo-bridge-gaps` auto-fixed it (reworded to `sk_…`), suite back to 270/270 → E 9. The only remaining sub-90 lever is **Lesson L3** (Architecture capped at 8 until CI is confirmed green) — cleared by pushing the branch + CI run, which lifts A→9 = composite **90 ✅**. Next: push `feat/s6-tap-payments` → confirm CI green → re-score → `/7-eo-ship` **STOP at the founder-authorized merge gate** (do NOT merge without the founder naming the PR).
+**Sprint 2 — S6 (Tap Payments) ship-ready at composite 90, HELD at the merge gate.** `/5-eo-score` → 88 (P9 A8 E9 Q9 U9); `/6-eo-bridge-gaps` fixed the `sk_live_` leak (E 7→9); branch pushed → **PR #8** → CI run `26787911025` **success** (PR Quality Gate + live-DB integration with all migrations) → L3 cleared → A 8→9 → **composite 90 ✅, no hat < 8**. `/7-eo-ship` is the only remaining step and it is **BLOCKED on explicit founder merge authorization** — the founder must name PR #8 (e.g. "merge PR 8"). Generic "go ahead" is NOT consent to merge.
+
+**⛔ Three PRs now sit at the merge gate awaiting the founder, none to be merged without being named:**
+- **PR #8** — S6 Tap Payments (composite 90, CI green) ← newest
+- **PR #7** — QA refusal hardening (CI green)
+- **PR #6** — deploy hardening (CI green; carries 2 stuck local `main` commits)
 
 Founder-gated, still open from Sprint 1:
 1. **Live Contabo cutover** — provision the VPS (Germany/EU), set production secrets per `docs/env-contract.md`, run `./deploy.sh`, then confirm `GET /api/health` → 200 live. Verified at config level by S5 tests; deferred (needs VPS + secrets only the founder holds).
