@@ -4,7 +4,7 @@ import type { RetrievedChunk } from "./types";
 // AC-3.3 — the exact sentinel the model must return when the answer is not in the
 // excerpts. Also the message returned when retrieval finds nothing (AC-3.5).
 export const NOT_FOUND_AR = "لم أجد إجابة لهذا السؤال في وثائقكم.";
-const NOT_FOUND_EN = "I couldn't find an answer to this question in your documents.";
+export const NOT_FOUND_EN = "I couldn't find an answer to this question in your documents.";
 
 export const NOT_FOUND: Record<Lang, string> = {
   ar: NOT_FOUND_AR,
@@ -22,7 +22,12 @@ export function buildSystemPrompt(lang: Lang): string {
   return [
     "You are LabBrain, an assistant for an ISO/IEC 17025 accredited laboratory.",
     "Answer only from the provided document excerpts.",
-    `If the answer is not present, respond with: '${NOT_FOUND_AR}'`,
+    // Refuse in the SAME language the answer is written in. A cross-language
+    // sentinel (e.g. an Arabic refusal on an English answer) at temp 0 makes the
+    // model paraphrase the refusal in its answer language, which would slip past
+    // detection and get logged found_answer=true with citations attached to a
+    // refusal — a P0 compliance-log integrity bug.
+    `If the answer is not present in the excerpts, respond with exactly: '${NOT_FOUND[lang]}'`,
     "Do not generate information not present in the source.",
     langLine,
     "Never translate ISO clause numbers, measurement units, or accreditation body names."
@@ -41,8 +46,35 @@ export function formatContext(chunks: RetrievedChunk[]): string {
     .join("\n\n");
 }
 
+// Normalise model output for tolerant sentinel matching: collapse runs of
+// whitespace, fold typographic apostrophes/quotes to ASCII (GPT often emits a
+// curly ’ in "couldn't"), and drop trailing sentence punctuation the model adds
+// or drops. Applied to both the answer and the sentinels so a missing period or a
+// fancy apostrophe never causes a refusal to be mislabelled as a found answer.
+function normaliseForMatch(s: string): string {
+  return s
+    .normalize("NFC")
+    .replace(/[‘’‛ʼ]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/[.!。！]+$/u, "")
+    .trim();
+}
+
+const NOT_FOUND_NORMALISED = [NOT_FOUND_AR, NOT_FOUND_EN].map(normaliseForMatch);
+
 // The model may still emit the refusal sentinel even when chunks were retrieved
 // (e.g. the excerpts are off-topic). Treat that as "not found" for found_answer.
+// Must catch a refusal in EITHER language (the prompt now refuses in the answer's
+// language) and must NEVER let a non-grounded answer through:
+//   - an empty / whitespace-only model response is treated as not-found, so it can
+//     never be logged found_answer=true with citations attached (P0 safety);
+//   - matching is substring-based on the normalised text, so a refusal carrying a
+//     leading hedge ("Unfortunately, …") or trailing nudge ("… please upload.")
+//     is still recognised.
 export function isNotFoundAnswer(answer: string): boolean {
-  return answer.trim().includes(NOT_FOUND_AR);
+  const norm = normaliseForMatch(answer);
+  if (norm.length === 0) return true;
+  return NOT_FOUND_NORMALISED.some((sentinel) => norm.includes(sentinel));
 }
