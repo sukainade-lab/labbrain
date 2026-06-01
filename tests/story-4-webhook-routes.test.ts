@@ -66,6 +66,22 @@ describe("Story 4 — /api/stripe/webhook route handler", () => {
     expect(h.handle.mock.calls[0][1]).toBe(event);
   });
 
+  // The seam must forward EVERY lifecycle event to the handler, not just
+  // checkout.session.completed — the route does no type filtering, so a
+  // regression that special-cased one type would be caught here.
+  it.each([
+    "customer.subscription.deleted",
+    "invoice.payment_failed"
+  ])("@AC-4.3 forwards %s to the handler verbatim → 200", async (type) => {
+    const event = { type, data: { object: {} } };
+    h.constructEvent.mockReturnValueOnce(event);
+    h.handle.mockResolvedValueOnce(undefined);
+    const res = await call({ "stripe-signature": "t=1,v1=good" });
+    expect(res.status).toBe(200);
+    expect(h.handle).toHaveBeenCalledTimes(1);
+    expect(h.handle.mock.calls[0][1]).toBe(event);
+  });
+
   it("@AC-4.3 a handler failure → 500 (so Stripe retries the idempotent handler)", async () => {
     h.constructEvent.mockReturnValueOnce({ type: "checkout.session.completed", data: { object: {} } });
     h.handle.mockRejectedValueOnce(new Error("db down"));

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getDashboardStats } from "@/lib/dashboard/stats";
+import { captureError } from "@/lib/observability/log";
 
 // GET /api/dashboard — usage counters for the signed-in tenant (AC-4.5):
 // documents X/limit, active users X/limit, questions this month. Auth-gated; the
@@ -24,7 +25,8 @@ export async function GET() {
   try {
     const stats = await getDashboardStats(createAdminClient(), me.tenant_id);
     return NextResponse.json(stats);
-  } catch {
+  } catch (err) {
+    captureError("dashboard", err);
     return NextResponse.json({ error: "تعذّر جلب الإحصائيات" }, { status: 500 });
   }
 }

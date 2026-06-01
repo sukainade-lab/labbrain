@@ -4,6 +4,13 @@ import { sendActivationEmail } from "@/lib/email/resend";
 
 type Admin = ReturnType<typeof createAdminClient>;
 
+// Stripe's generated Invoice type doesn't always surface `subscription` on the
+// version we pin, though the API sends it. Narrow it once here instead of an
+// inline cast at the call site.
+type InvoiceWithSubscription = Stripe.Invoice & {
+  subscription?: string | { id: string } | null;
+};
+
 // AC-4.3 — apply a verified Stripe event to our DB.
 //   • tenants.status       — the ACCESS GATE (active / inactive / past_due)
 //   • subscriptions.status — a MIRROR of the Stripe lifecycle (audit trail)
@@ -45,9 +52,9 @@ async function onCheckoutCompleted(admin: Admin, session: Stripe.Checkout.Sessio
   await update(admin, "tenants", { plan: plan ?? undefined, status: "active" }, "id", tenantId);
 
   // 2) Idempotent upsert of the subscription row keyed by stripe_subscription_id.
-  //    Done as find-then-write (not PostgREST upsert) because the unique index is
-  //    partial (where stripe_subscription_id is not null), which PostgREST's
-  //    on-conflict targeting can't reliably address.
+  //    Atomic via the upsert_subscription RPC (migration 0006): it runs INSERT …
+  //    ON CONFLICT against the PARTIAL unique index, which PostgREST's on-conflict
+  //    can't target — so concurrent Stripe retries can't race a duplicate row.
   if (stripeSubscriptionId) {
     await upsertSubscription(admin, {
       tenant_id: tenantId,
@@ -86,9 +93,7 @@ async function onSubscriptionDeleted(admin: Admin, sub: Stripe.Subscription) {
 }
 
 async function onPaymentFailed(admin: Admin, invoice: Stripe.Invoice) {
-  const subId = idOf(
-    (invoice as Stripe.Invoice & { subscription?: string | { id: string } }).subscription
-  );
+  const subId = idOf((invoice as InvoiceWithSubscription).subscription);
   if (!subId) return;
   const tenantId = await tenantForSubscription(admin, subId);
   if (!tenantId) return;
@@ -118,18 +123,16 @@ async function upsertSubscription(
     status: string;
   }
 ) {
-  const { data: existing } = await admin
-    .from("subscriptions")
-    .select("id")
-    .eq("stripe_subscription_id", row.stripe_subscription_id)
-    .maybeSingle();
-  if (existing) {
-    const { error } = await admin.from("subscriptions").update(row).eq("id", existing.id);
-    if (error) throw error;
-  } else {
-    const { error } = await admin.from("subscriptions").insert(row);
-    if (error) throw error;
-  }
+  // Atomic INSERT … ON CONFLICT on the partial unique index (migration 0006).
+  const { error } = await admin.rpc("upsert_subscription", {
+    p_tenant_id: row.tenant_id,
+    p_stripe_customer_id: row.stripe_customer_id,
+    p_stripe_subscription_id: row.stripe_subscription_id,
+    p_plan: row.plan,
+    p_price_interval: row.price_interval,
+    p_status: row.status
+  });
+  if (error) throw error;
 }
 
 async function update(

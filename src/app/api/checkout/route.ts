@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createCheckoutSession } from "@/lib/payment/stripe/checkout";
 import { resolvePriceId } from "@/lib/payment/stripe/prices";
+import { captureError } from "@/lib/observability/log";
 
 // AC-4.2 — start a Stripe Checkout (mode: subscription) for the signed-in
 // tenant. Auth is required; the marketing CTA routes unauthenticated visitors
@@ -54,7 +55,8 @@ export async function POST(req: Request) {
       stripeCustomerId: sub?.stripe_customer_id ?? null
     });
     return NextResponse.json({ url: session.url });
-  } catch {
+  } catch (err) {
+    captureError("checkout", err);
     return NextResponse.json({ error: "تعذّر بدء عملية الدفع" }, { status: 500 });
   }
 }

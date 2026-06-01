@@ -9,9 +9,12 @@ import {
   ANNUAL_DISCOUNT,
   type Interval
 } from "@/lib/pricing/plans";
+import { startCheckout } from "@/lib/payment/checkout-client";
 
 // AC-4.1 — pricing page: Starter 35 / Pro 70 JOD, monthly⇄annual toggle (annual −25%).
 // Plan/cap data comes from lib/pricing/plans (single source of truth).
+// AC-4.2 — the CTA starts a real Stripe Checkout via /api/checkout (authenticated
+// tenants → Stripe; visitors → /signup carrying the chosen plan).
 const DISCOUNT_PCT = Math.round(ANNUAL_DISCOUNT * 100);
 
 function Jod() {
@@ -21,6 +24,22 @@ function Jod() {
 
 export default function PricingPage() {
   const [interval, setInterval] = useState<Interval>("month");
+  const [pendingPlan, setPendingPlan] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function onChoosePlan(planId: string) {
+    setError(null);
+    setPendingPlan(planId);
+    await startCheckout(planId, interval, {
+      redirect: (url) => {
+        window.location.href = url;
+      },
+      onError: (msg) => {
+        setError(msg);
+        setPendingPlan(null);
+      }
+    });
+  }
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-20">
@@ -98,16 +117,24 @@ export default function PricingPage() {
                 ))}
               </ul>
 
-              <Link
-                href={`/signup?plan=${plan.id}&interval=${interval}`}
-                className="mt-8 block min-h-[44px] rounded-lg bg-amber-600 px-6 py-3 text-center font-medium text-white hover:bg-amber-500"
+              <button
+                type="button"
+                onClick={() => onChoosePlan(plan.id)}
+                disabled={pendingPlan !== null}
+                className="mt-8 block w-full min-h-[44px] rounded-lg bg-amber-600 px-6 py-3 text-center font-medium text-white hover:bg-amber-500 disabled:opacity-60"
               >
-                ابدأ الآن
-              </Link>
+                {pendingPlan === plan.id ? "جارٍ التحويل…" : "ابدأ الآن"}
+              </button>
             </div>
           );
         })}
       </div>
+
+      {error && (
+        <p role="alert" className="mt-6 text-center text-sm text-red-400">
+          {error}
+        </p>
+      )}
 
       <p className="mt-10 text-center text-sm text-slate-400">
         تفضّل الدفع بفاتورة رسمية وتحويل بنكي؟{" "}

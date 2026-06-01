@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/payment/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { handleStripeEvent } from "@/lib/payment/stripe/activation";
+import { captureError } from "@/lib/observability/log";
 
 // AC-4.3 — Stripe webhook: signature-verified, then applied to the DB.
 // checkout.session.completed → activate; subscription.deleted → inactive;
@@ -28,7 +29,8 @@ export async function POST(req: NextRequest) {
 
   try {
     await handleStripeEvent(createAdminClient(), event);
-  } catch {
+  } catch (err) {
+    captureError(`webhook:${event.type}`, err);
     // Return 500 so Stripe retries; the handlers are idempotent, so a retry is safe.
     return NextResponse.json({ error: "webhook handler failed" }, { status: 500 });
   }
