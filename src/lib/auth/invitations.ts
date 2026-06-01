@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import type { createAdminClient } from "@/lib/supabase/admin";
-import { PLAN_SEAT_LIMITS } from "@/lib/validation/auth";
 import { SignupError } from "@/lib/auth/provision";
+import { countSeats, getPlanLimit } from "@/lib/auth/seats";
 
 type Admin = ReturnType<typeof createAdminClient>;
 
@@ -10,25 +10,8 @@ export type SeatUsage = { plan: string; limit: number; used: number; available: 
 // Seats consumed = active users + still-pending invitations (AC-1.6). A pending
 // invite holds a seat so a tenant can't over-invite past its plan cap.
 export async function getSeatUsage(admin: Admin, tenantId: string): Promise<SeatUsage> {
-  const { data: tenant } = await admin
-    .from("tenants")
-    .select("plan")
-    .eq("id", tenantId)
-    .single();
-  const plan = (tenant?.plan ?? "starter") as keyof typeof PLAN_SEAT_LIMITS;
-  const limit = PLAN_SEAT_LIMITS[plan] ?? PLAN_SEAT_LIMITS.starter;
-
-  const { count: userCount } = await admin
-    .from("users")
-    .select("id", { count: "exact", head: true })
-    .eq("tenant_id", tenantId);
-  const { count: pendingCount } = await admin
-    .from("invitations")
-    .select("id", { count: "exact", head: true })
-    .eq("tenant_id", tenantId)
-    .is("accepted_at", null);
-
-  const used = (userCount ?? 0) + (pendingCount ?? 0);
+  const { plan, limit } = await getPlanLimit(admin, tenantId);
+  const used = await countSeats(admin, tenantId, { includePending: true });
   return { plan, limit, used, available: Math.max(0, limit - used) };
 }
 

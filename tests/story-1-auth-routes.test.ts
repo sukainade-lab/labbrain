@@ -19,13 +19,27 @@ const PASSWORD = "Test-Passw0rd!";
 const uniq = (p: string) => `${p}-${Date.now()}-${Math.random().toString(36).slice(2)}@labbrain.test`;
 
 // Fake server client state — set per test; referenced by the hoisted mock below.
+// `anon` is a real anon-key client wired up in beforeAll: the login/forgot/logout
+// routes go through the actual Supabase auth seam (signInWithPassword, etc.), so
+// these tests exercise real credential checks, not a stubbed happy path.
 const h = vi.hoisted(() => ({
-  state: { user: null as { id: string } | null, me: null as { tenant_id: string; role: string } | null }
+  state: {
+    user: null as { id: string } | null,
+    me: null as { tenant_id: string; role: string } | null,
+    anon: null as SupabaseClient | null
+  }
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
-    auth: { getUser: async () => ({ data: { user: h.state.user } }) },
+    auth: {
+      getUser: async () => ({ data: { user: h.state.user } }),
+      signInWithPassword: (input: { email: string; password: string }) =>
+        h.state.anon!.auth.signInWithPassword(input),
+      resetPasswordForEmail: (email: string, opts: { redirectTo: string }) =>
+        h.state.anon!.auth.resetPasswordForEmail(email, opts),
+      signOut: () => h.state.anon!.auth.signOut()
+    },
     from: () => ({
       select: () => ({ eq: () => ({ single: async () => ({ data: h.state.me }) }) })
     })
@@ -35,6 +49,9 @@ vi.mock("@/lib/supabase/server", () => ({
 // Imported after the mock is declared (vi.mock is hoisted above imports).
 import { POST as signupPOST } from "@/app/api/auth/signup/route";
 import { POST as invitePOST } from "@/app/api/invitations/route";
+import { POST as loginPOST } from "@/app/api/auth/login/route";
+import { POST as forgotPOST } from "@/app/api/auth/forgot/route";
+import { POST as logoutPOST } from "@/app/api/auth/logout/route";
 import { createInvitation } from "@/lib/auth/invitations";
 
 function postJson(handler: (req: Request) => Promise<Response>, body: unknown) {
@@ -50,6 +67,19 @@ function postJson(handler: (req: Request) => Promise<Response>, body: unknown) {
 describe.skipIf(!hasLiveSupabase)("Story 1 — route handlers", () => {
   let admin: SupabaseClient;
   const tenantsToReap: string[] = [];
+  const authUsersToReap: string[] = [];
+
+  // A bare confirmed auth user (no tenant row) — enough to exercise the login seam.
+  async function makeConfirmedUser() {
+    const email = uniq("login");
+    const { data: created } = await admin.auth.admin.createUser({
+      email,
+      password: PASSWORD,
+      email_confirm: true
+    });
+    authUsersToReap.push(created!.user.id);
+    return { email };
+  }
 
   // Reap a tenant: capture its auth user ids, drop the tenant (cascades users,
   // invitations, etc.), then delete the orphaned auth.users rows.
@@ -99,10 +129,21 @@ describe.skipIf(!hasLiveSupabase)("Story 1 — route handlers", () => {
     admin = createClient(url!, serviceKey!, {
       auth: { autoRefreshToken: false, persistSession: false }
     });
+    // The login/forgot/logout routes call this through the mocked server client.
+    h.state.anon = createClient(url!, anonKey!, {
+      auth: { autoRefreshToken: false, persistSession: false }
+    });
   });
 
   afterAll(async () => {
     for (const id of tenantsToReap) await reapTenant(id);
+    for (const id of authUsersToReap) {
+      try {
+        await admin.auth.admin.deleteUser(id);
+      } catch {
+        /* best-effort */
+      }
+    }
   });
 
   // ── /api/auth/signup ───────────────────────────────────────────────────────
@@ -244,5 +285,55 @@ describe.skipIf(!hasLiveSupabase)("Story 1 — route handlers", () => {
     const data = await res.json();
     expect(res.status).toBe(402);
     expect(data.code).toBe("seat_limit");
+  });
+
+  // ── /api/auth/login ──────────────────────────────────────────────────────────
+
+  it("@AC-1.5 POST /api/auth/login with a malformed body → 400", async () => {
+    const res = await postJson(loginPOST, { email: "not-an-email" });
+    expect(res.status).toBe(400);
+  });
+
+  it("@AC-1.5 POST /api/auth/login with correct credentials → 200 + dashboard next", async () => {
+    const { email } = await makeConfirmedUser();
+    const res = await postJson(loginPOST, { email, password: PASSWORD });
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data.ok).toBe(true);
+    expect(data.next).toBe("/dashboard");
+  });
+
+  it("@AC-1.5 POST /api/auth/login with a wrong password → 401", async () => {
+    const { email } = await makeConfirmedUser();
+    const res = await postJson(loginPOST, { email, password: "WrongPassw0rd!" });
+    const data = await res.json();
+    expect(res.status).toBe(401);
+    expect(data.error).toBeTruthy(); // Arabic credential-error message
+  });
+
+  // ── /api/auth/forgot ─────────────────────────────────────────────────────────
+
+  it("@AC-1.5 POST /api/auth/forgot for a registered email → 200 (no enumeration)", async () => {
+    const { email } = await makeConfirmedUser();
+    const res = await postJson(forgotPOST, { email });
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data.ok).toBe(true);
+  });
+
+  it("@AC-1.5 POST /api/auth/forgot for an unknown email → 200 (same response)", async () => {
+    const res = await postJson(forgotPOST, { email: uniq("ghost") });
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data.ok).toBe(true);
+  });
+
+  // ── /api/auth/logout ─────────────────────────────────────────────────────────
+
+  it("@AC-1.5 POST /api/auth/logout → 200 + login next", async () => {
+    const res = await postJson(logoutPOST, {});
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data.next).toBe("/login");
   });
 });

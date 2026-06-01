@@ -13,8 +13,28 @@ export function SignupForm({ token }: { token?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "done">("idle");
 
   const isInvite = Boolean(token);
+
+  // AC-1.2 "أعد الإرسال" — re-trigger the signup confirmation email. The route
+  // always returns 200 (can't probe registered addresses), so we just reflect
+  // "sent" optimistically once the request settles.
+  async function onResend() {
+    if (resendState === "sending") return;
+    setResendState("sending");
+    try {
+      await fetch("/api/auth/resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+    } catch {
+      // Swallow — neutral UX; the user can simply try again.
+    } finally {
+      setResendState("done");
+    }
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,6 +74,21 @@ export function SignupForm({ token }: { token?: string }) {
         <p className="mt-3 leading-7 text-slate-400">
           أرسلنا رابط التأكيد إلى <bdi className="bidi-term text-[#F59E0B]">{email}</bdi>.
           الرابط صالح لمدة 24 ساعة — اضغطه لتفعيل حسابك ومتابعة الإعداد.
+        </p>
+        <p className="mt-6 text-sm text-slate-500">
+          لم تصلك الرسالة؟{" "}
+          {resendState === "done" ? (
+            <span className="text-[#F59E0B]">أعدنا الإرسال — تحقّق من بريدك</span>
+          ) : (
+            <button
+              type="button"
+              onClick={onResend}
+              disabled={resendState === "sending"}
+              className="text-[#F59E0B] hover:underline disabled:opacity-60"
+            >
+              {resendState === "sending" ? "جارٍ الإرسال…" : "أعد الإرسال"}
+            </button>
+          )}
         </p>
       </div>
     );

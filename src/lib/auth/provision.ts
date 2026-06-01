@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { PLAN_SEAT_LIMITS, type SignupInput } from "@/lib/validation/auth";
+import { type SignupInput } from "@/lib/validation/auth";
+import { countSeats, getPlanLimit } from "@/lib/auth/seats";
 
 // Default post-confirmation destination (AC-1.2). The /auth/confirm route reads
 // ?next and falls back here.
@@ -112,24 +113,15 @@ export async function provisionSignup(input: SignupInput): Promise<SignupResult>
 }
 
 // Throws SignupError("seat_limit") when the tenant is already at its plan cap.
+// Counts real users only (not the pending invite being accepted, which is about
+// to become one) — see the note on countSeats.
 export async function assertSeatAvailable(
   admin: ReturnType<typeof createAdminClient>,
   tenantId: string
 ): Promise<void> {
-  const { data: tenant } = await admin
-    .from("tenants")
-    .select("plan")
-    .eq("id", tenantId)
-    .single();
-  const plan = (tenant?.plan ?? "starter") as keyof typeof PLAN_SEAT_LIMITS;
-  const limit = PLAN_SEAT_LIMITS[plan] ?? PLAN_SEAT_LIMITS.starter;
-
-  const { count } = await admin
-    .from("users")
-    .select("id", { count: "exact", head: true })
-    .eq("tenant_id", tenantId);
-
-  if ((count ?? 0) >= limit) {
+  const { plan, limit } = await getPlanLimit(admin, tenantId);
+  const used = await countSeats(admin, tenantId, { includePending: false });
+  if (used >= limit) {
     throw new SignupError(
       "seat_limit",
       `بلغت الحد الأقصى للمستخدمين في خطة ${plan}. الرجاء الترقية.`
