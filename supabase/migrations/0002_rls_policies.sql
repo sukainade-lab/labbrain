@@ -1,6 +1,7 @@
 -- Tenant-isolation RLS — AC-1.3 / AC-2.4 / AC-5.7.
--- Every tenant-scoped table: a row is visible only when its tenant_id matches
--- the tenant_id of the requesting auth user (resolved via public.users).
+-- Canonical, applied in every environment via the migrations path (local
+-- `supabase start` and remote `supabase db push`). A row is visible only when
+-- its tenant_id matches the tenant_id of the requesting auth user.
 
 -- Helper: the tenant_id of the current authenticated user.
 create or replace function public.current_tenant_id()

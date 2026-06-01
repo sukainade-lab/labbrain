@@ -1,5 +1,5 @@
 -- LabBrain initial schema — multi-tenant, RTL-agnostic, pgvector for RAG.
--- AC-1.3 / AC-2.4 / AC-5.7: tenant isolation enforced via RLS (see policies/rls.sql).
+-- AC-1.3 / AC-2.4 / AC-5.7: tenant isolation enforced via RLS (see 0002_rls_policies.sql).
 
 create extension if not exists "uuid-ossp";
 create extension if not exists vector;
