@@ -1,0 +1,27 @@
+# LabBrain — Caddy reverse proxy (AC-5.3).
+# Caddy auto-provisions and renews a Let's Encrypt certificate for the domain and
+# proxies all traffic to the Next.js app container on :3000. The domain is
+# injected from the environment (LABBRAIN_DOMAIN) by docker-compose.
+
+{$LABBRAIN_DOMAIN} {
+	encode zstd gzip
+
+	# Forward everything to the Next.js standalone server.
+	reverse_proxy app:3000
+
+	# Pass the real client IP/scheme through to the app.
+	header_up X-Forwarded-Proto {scheme}
+
+	# Lightweight security headers (HSTS only over the auto-provisioned TLS).
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

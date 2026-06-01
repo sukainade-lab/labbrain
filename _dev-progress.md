@@ -11,7 +11,7 @@
 | S2 | Document Upload & Indexing | domain, compliance | AC-2.1…2.6 (6) | ✅ shipped 2026-06-01 · 100/100 · PR #2 merged (`22f6b30`) · runtime deploy deferred to S5 |
 | S3 | Bilingual Q&A with Mandatory Citation | domain | AC-3.1…3.7 (7) | ✅ shipped 2026-06-01 · 100/100 · PR #3 merged (`1d3af51`) · runtime deploy deferred to S5 |
 | S4 | Pricing, Stripe Checkout & Activation | money, notify | AC-4.1…4.5 (5) | ✅ shipped 2026-06-02 · 100/100 · PR #4 merged (`d562f19`) · 154 tests / 7 S5-skip · runtime deploy deferred to S5 |
-| S5 | Deploy, Health & Observability | deploy, observability, compliance | AC-5.1…5.7 (7) | 📝 planned · plan `docs/handovers/plan-S5-deploy.md` · branch `feat/s5-deploy` · CI live-DB integration job spec ready → `docs/backlog/S5-ci-integration-db.md` |
+| S5 | Deploy, Health & Observability | deploy, observability, compliance | AC-5.1…5.7 (7) | 🔨 coding · 231 tests passing (all live suites incl. AC-5.7 RLS) · all 7 ACs green · CI `integration` job added · live deploy founder-gated · next `/4-eo-review` |
 
 **Totals:** 5 stories · 31 ACs · all 7 loops covered.
 
