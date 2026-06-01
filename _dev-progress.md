@@ -19,7 +19,7 @@
 
 | Story | Title | Loop | Status |
 |-------|-------|------|--------|
-| S6 | Tap Payments card integration (JOD + KWD + SAR) | money | 🔨 coding 2026-06-02 · AC-6.1…6.6 green · tests 270/270 passing (S6: router 5, currency 12, tap-charge 3, checkout 3, tap-webhook 7, tap-webhook-routes 4, tap-activation 3 live, cta 2) · gates: tsc/lint/build green · branch `feat/s6-tap-payments` · `docs/handovers/plan-S6-tap-payments.md` |
+| S6 | Tap Payments card integration (JOD + KWD + SAR) | money | 🧪 scoring 2026-06-02 · **composite 88** (P9 A8 E9 Q9 U9) → CI-green lifts A→9 = **90** · AC-6.1…6.6 green · 6/6 ACs @AC-tagged · tests 270/270 · tsc/lint/build green · review clean · bridge: fixed `sk_live_` leak in `.env.example` (E 7→9) · score `docs/qa-scores/2026-06-02-0214-S6-tap-payments.md` · branch `feat/s6-tap-payments` |
 | S7 | SMS 2FA via Unifonic (Jordan numbers) | auth |
 | S8 | Founder super-admin panel | domain |
 | S9 | Audit export — Q&A log as PDF | domain |
@@ -35,7 +35,7 @@
 ⬜ not started · 🟡 in progress · ✅ shipped (PR merged + score ≥90)
 
 ## Next
-**Sprint 2 — S6 (Tap Payments) coded, all ACs green.** `/3-eo-code` complete: AC-6.1…6.6 implemented via TDD, 270/270 tests pass (serialized incl. live Tap activation), tsc/lint/build all green. Status stays 🔨 coding until review passes. Next command: `/4-eo-review` (NOT `/5-eo-score` — never skip review), then `/5-eo-score` → `/7-eo-ship` (stop at the founder-authorized merge gate).
+**Sprint 2 — S6 (Tap Payments) scored 88, one bridge applied, CI-pending for 90.** `/5-eo-score` (5 parallel hats): P9 A8 E9 Q9 U9. Engineering was 7 (the `.env.example` Tap comment embedded `sk_live_`, tripping the S5 leak guard → suite red); `/6-eo-bridge-gaps` auto-fixed it (reworded to `sk_…`), suite back to 270/270 → E 9. The only remaining sub-90 lever is **Lesson L3** (Architecture capped at 8 until CI is confirmed green) — cleared by pushing the branch + CI run, which lifts A→9 = composite **90 ✅**. Next: push `feat/s6-tap-payments` → confirm CI green → re-score → `/7-eo-ship` **STOP at the founder-authorized merge gate** (do NOT merge without the founder naming the PR).
 
 Founder-gated, still open from Sprint 1:
 1. **Live Contabo cutover** — provision the VPS (Germany/EU), set production secrets per `docs/env-contract.md`, run `./deploy.sh`, then confirm `GET /api/health` → 200 live. Verified at config level by S5 tests; deferred (needs VPS + secrets only the founder holds).
@@ -44,7 +44,7 @@ Founder-gated, still open from Sprint 1:
 Standing (surface, do not work around): **rotate the GitHub PAT** (pasted plaintext earlier — live/active for `sukainade-lab`); `.claude/settings.json` SessionStart hook still awaiting explicit approval.
 
 ---
-**Last updated:** 2026-06-02 · **Current sprint:** 2 / ~5 · **Last command:** `/3-eo-code story-6` (S6 Tap Payments — AC-6.1…6.6 green via TDD; PaymentProvider interface + `pickProvider` router + provider-neutral `activation-core`; Tap HPP checkout + signature-verified webhook + shared idempotent activation; `currency.ts` JOD/KWD/SAR; migration `0008_tap_payments.sql`; 270/270 tests; tsc/lint/build green; env-contract + `.env.example` updated with `TAP_SECRET_KEY` + `TAP_PRICE_*`). Status 🔨 coding. Next: `/4-eo-review`.
+**Last updated:** 2026-06-02 · **Current sprint:** 2 / ~5 · **Last command:** `/5-eo-score story-6` (+ `/6-eo-bridge-gaps`) — S6 composite **88** (P9 A8 E9 Q9 U9); bridged the `sk_live_` leak in `.env.example` (E 7→9, suite 270/270); remaining −2 is the L3 CI cap on Architecture, cleared by pushing the branch. Commits `5d14534` `3f50bea` `2e3dead` on `feat/s6-tap-payments`. Score report `docs/qa-scores/2026-06-02-0214-S6-tap-payments.md`. Status 🧪 scoring. Next: push branch → CI green → re-score → `/7-eo-ship` (stop at merge gate).
 
 ## Retros
 - 2026-06-02 — `docs/retros/2026-06-02.md` (Sprint 1 / Weekend MVP S1–S5; 5 PRs shipped; first-pass avg composite 87.6, all bridged to 100; focus hat: UX — repeat `<bdi>` miss → L5; process proposals P1 CI-before-score, P2 ingester regex).
