@@ -21,6 +21,8 @@ Copy `.env.example` → `.env.local` and fill. Never commit `.env.local`.
 | `STRIPE_PRICE_STARTER_YEAR` | Stripe → Products | Price ID for Starter annual (−25% = 315 JOD/yr) |
 | `STRIPE_PRICE_PRO_MONTH` | Stripe → Products | Price ID for Pro monthly (70 JOD/mo) |
 | `STRIPE_PRICE_PRO_YEAR` | Stripe → Products | Price ID for Pro annual (−25% = 630 JOD/yr) |
+| `TAP_SECRET_KEY` | dashboard.tap.company → Developers → API Credentials | `sk_test_…`/`sk_live_…`; **one key, two jobs** — authenticates Tap API calls AND verifies the webhook hashstring (HMAC-SHA256). No separate webhook secret exists (S6/AC-6.3). |
+| `TAP_PRICE_{PLAN}_{INTERVAL}_{KWD\|SAR}` | You (founder price points) | KWD/SAR amounts in major units (e.g. `49.000`). 8 keys: STARTER/PRO × MONTH/YEAR × KWD/SAR. JOD is derived from `lib/pricing/plans` (not env). `amountFor` THROWS if a needed key is missing — no FX guessing (AC-6.5). |
 | `INVOICE_REQUEST_TO` | You | Founder/sales inbox that receives bank-transfer invoice requests (AC-4.2 fallback) |
 | `DEMO_VIDEO_URL` | You | Welcome-email demo link (AC-4.4); falls back to `${APP_URL}/demo` if unset |
 | `NEXT_PUBLIC_SENTRY_DSN` | sentry.io → Project → Client Keys (DSN) | Error monitoring |
@@ -30,3 +32,12 @@ Copy `.env.example` → `.env.local` and fill. Never commit `.env.local`.
 ## Payments caveat (founder override)
 
 Payments use **Stripe** by founder decision. Stripe does **not** onboard Jordan-registered businesses, and JOD is not a standard Stripe settlement currency. This setup assumes a Stripe account under an entity in a supported country (e.g. US/UK LLC). Pricing is *displayed* in JOD; actual charge/settlement currency depends on the Stripe account. If Stripe onboarding is rejected, fall back to Tap Payments or manual JOD bank transfer + invoice (the original BRD plan — the `onboarding-flow.jsx` invoice screen covers this).
+
+## Two payment rails (S6 — AC-6.1)
+
+As of S6 both rails are wired behind one `PaymentProvider` interface, selected at runtime by `pickProvider(currency)`:
+
+- **Tap** — primary for **JOD / KWD / SAR** (the Gulf currencies). Requires `TAP_SECRET_KEY` and, for KWD/SAR, the `TAP_PRICE_*` price points. JOD needs no price env (derived from `lib/pricing/plans`).
+- **Stripe** — every other currency (the S4 contract, unchanged). A checkout POST with no `currency` still routes to Stripe, so the shipped loop is untouched.
+
+The live default is JOD → Tap. Stripe stays fully configured as the international rail and as the documented fallback if Tap (or Stripe) onboarding is rejected.
