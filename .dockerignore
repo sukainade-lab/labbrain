@@ -1,0 +1,48 @@
+# LabBrain — Docker build context exclusions.
+# The Dockerfile builder stage does `COPY . .`; without this file, secrets
+# (.env on the VPS), the local .next cache, node_modules, and .git would all be
+# baked into the builder image layer. Keep the build context minimal + secret-free.
+
+# secrets — NEVER let an env file into any image layer
+.env
+.env.local
+.env*.local
+.env.example
+
+# dependencies (the deps stage reinstalls from the lockfile)
+node_modules
+.pnp
+.pnp.js
+
+# build output (rebuilt inside the image)
+.next
+out
+build
+dist
+
+# version control + CI
+.git
+.github
+.gitignore
+
+# tests + dev tooling (not needed at build/runtime)
+tests
+vitest.config.ts
+coverage
+*.log
+
+# local infra + docs (not part of the app bundle)
+supabase/.branches
+supabase/.temp
+docs
+.claude
+.vscode
+.idea
+
+# the compose/deploy artifacts themselves
+docker-compose.yml
+Dockerfile
+.dockerignore
+Caddyfile
+deploy.sh
+README.md

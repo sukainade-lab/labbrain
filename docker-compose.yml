@@ -7,6 +7,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    # Stable tag so deploy.sh can retag the previous image for a real rollback.
+    image: labbrain-app:latest
     restart: unless-stopped
     env_file:
       - .env
