@@ -57,7 +57,7 @@ async function makeTenant(admin: SupabaseClient, name: string, emailPrefix: stri
 
   const { error: qErr } = await admin
     .from("queries")
-    .insert({ tenant_id: tenant.id, user_id: authUserId, question: `${name} question?` });
+    .insert({ tenant_id: tenant.id, user_id: authUserId, question_text: `${name} question?` });
   if (qErr) throw qErr;
 
   return { tenantId: tenant.id as string, email, docId: doc.id as string };
