@@ -19,6 +19,32 @@ to every S1 route handler — signup (new-lab/invite/duplicate/seat-limit/bad-bo
 invitations (401/403/201/402), login (200/401/400), forgot (200×2), logout (200).
 16 route tests. The cap no longer applies to S1; it remains active for new stories.
 
+### L2 — Live DB suites must be serialized; they share one Supabase (2026-06-01, S3)
+**Trigger:** the live integration suites (`story-1-auth`, `story-2-*`, `story-3-qa`)
+all seed/cleanup against a single shared Supabase instance. Vitest runs test files
+in parallel by default (no `pool`/`fileParallelism` config), so concurrent seeding
+and `afterAll` cleanup across suites can race — a flaky-CI hazard the moment these
+suites actually run in a runner (today they self-skip in CI for lack of `.env.local`).
+**Rule:** any CI job that runs the live suites must disable file parallelism
+(`vitest run --no-file-parallelism`, or `poolOptions.*.singleFork`). Each suite must
+also scope its seed data to a unique tenant/user and clean up in `afterAll`, never
+assuming an empty DB. Don't rely on luck from self-skipping to hide the race.
+**Effect on scoring:** when the CI-DB job lands (S5), QA hat capped at 8 for any
+story whose live suite runs unserialized against the shared instance.
+
+### L3 — Verify the CI pipeline is green; never assume local gates == CI (2026-06-01, S3)
+**Trigger:** S1 and S2 were merged with a **red** CI Quality Gate. Root cause: the
+`Audit` step ran `npm audit --audit-level=high` over *all* deps and died on a
+dev-only esbuild/vitest critical that never ships to production; the `Test` step
+soft-failed (`npm run test || echo …`) so tests couldn't block a merge. Local gates
+passed, so the red CI went unnoticed across two ships.
+**Rule:** before declaring a story ship-ready, confirm the actual CI run is green
+(`gh run list --branch <b>` → success), not just local `npm run build/test/lint`.
+Audit gates on production-runtime deps (`--omit=dev`); the test step is a hard gate,
+never soft-failed. Fixed in `feat/s3-qa` (`fd96333`); lands on `main` with PR #3.
+**Effect on scoring:** Architecture hat capped at 8 for any story shipped without a
+confirmed-green CI run on its PR.
+
 ## Archived lessons
 
 None.

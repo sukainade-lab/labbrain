@@ -54,6 +54,16 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // When the user arrives from a Q&A citation (/documents?doc=ID), highlight and
+  // scroll to that source document so they land on the exact file they cited.
+  // Read off the URL via a lazy initializer (not useSearchParams) to keep this
+  // page static; safe from hydration mismatch because document rows render only
+  // after the client-side load, never in the server HTML.
+  const [highlightId, setHighlightId] = useState<string | null>(() =>
+    typeof window === "undefined"
+      ? null
+      : new URLSearchParams(window.location.search).get("doc")
+  );
   const fileRef = useRef<HTMLInputElement>(null);
 
   // No synchronous setState here: the first await yields before any state
@@ -76,6 +86,16 @@ export default function DocumentsPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Once the highlighted doc is in the list, scroll it into view. Clears after a
+  // few seconds so the ring doesn't linger past its purpose.
+  useEffect(() => {
+    if (!highlightId || loading) return;
+    const el = document.getElementById(`doc-${highlightId}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const t = setTimeout(() => setHighlightId(null), 4000);
+    return () => clearTimeout(t);
+  }, [highlightId, loading, docs]);
 
   // Parsing/indexing happen in the background; poll while any doc is non-terminal
   // so the badge transitions parsing→indexing→ready render live (AC-2.2).
@@ -166,7 +186,12 @@ export default function DocumentsPage() {
             return (
               <div
                 key={doc.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-[#334155] bg-[#1B2A3D] px-4 py-3"
+                id={`doc-${doc.id}`}
+                className={`flex items-center justify-between gap-3 rounded-xl border bg-[#1B2A3D] px-4 py-3 transition ${
+                  doc.id === highlightId
+                    ? "border-[#F59E0B] ring-2 ring-[#F59E0B]/50"
+                    : "border-[#334155]"
+                }`}
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <div

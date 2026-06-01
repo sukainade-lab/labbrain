@@ -18,7 +18,9 @@ body {
   color: #e2e8f0;
 }
 
-/* English technical terms inside Arabic text stay LTR and visually isolated. */
+/* English technical terms inside Arabic text stay LTR and visually isolated.
+   Used by spans (landing, pricing) and as a hardener on <bdi> in auth flows.
+   NOT dead — referenced in 6 components; do not remove without converting them. */
 .bidi-term {
   unicode-bidi: isolate;
   direction: ltr;

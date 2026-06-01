@@ -36,8 +36,8 @@ export async function proxy(req: NextRequest) {
   return res;
 }
 
-// Protect every member of the (app) group (dashboard, documents, admin).
+// Protect every member of the (app) group (dashboard, documents, qa, admin).
 // Public routes are unaffected. Keep this in sync when adding (app) routes.
 export const config = {
-  matcher: ["/dashboard/:path*", "/documents/:path*", "/admin/:path*"]
+  matcher: ["/dashboard/:path*", "/documents/:path*", "/qa/:path*", "/admin/:path*"]
 };

@@ -24,11 +24,16 @@ jobs:
         run: npm run lint
 
       - name: Test
-        # Soft-fail until 100% AC coverage lands (placeholder @AC-N.N stubs are .skip at bootstrap).
-        run: npm run test || echo "tests not yet at full AC coverage"
+        # Hard gate. Live integration suites self-skip without Supabase env
+        # (no .env.local on CI); pure + fully-mocked route tests must pass.
+        # S4/S5 placeholders are .skip (skipped ≠ failed), so they don't block.
+        run: npm run test
 
       - name: Build
         run: npm run build
 
       - name: Audit
-        run: npm audit --audit-level=high
+        # Gate on production-runtime deps only. Dev-tooling advisories (e.g. the
+        # esbuild dev-server SSRF in the vitest chain) never ship to production;
+        # they're tracked but not release-blocking — matches the project convention.
+        run: npm audit --omit=dev --audit-level=high
