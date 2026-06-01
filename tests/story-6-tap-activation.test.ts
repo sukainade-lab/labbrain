@@ -152,9 +152,11 @@ describe.skipIf(!hasLiveSupabase)("Story 6 — Tap activation (live)", () => {
     expect(rows).toHaveLength(1);
   });
 
-  it("@AC-6.3 a Tap charge id never collides with the same id on the Stripe rail", async () => {
-    // (provider, provider_subscription_id) is the uniqueness key — the same raw id
-    // under two providers is two distinct rows, never a conflicting upsert.
+  it("@AC-6.4 a Tap charge id never collides with the same id on the Stripe rail", async () => {
+    // (provider, provider_subscription_id) is the uniqueness key from migration 0008
+    // — the same raw id under two providers is two distinct rows, never a conflicting
+    // upsert. This is the provider-neutral schema contract (AC-6.4) the shared
+    // upsert_provider_subscription RPC relies on.
     const { tenantId } = await seedTenant();
     const sharedId = `id_${Math.random().toString(36).slice(2)}`;
 
