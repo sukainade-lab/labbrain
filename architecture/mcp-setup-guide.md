@@ -1,7 +1,7 @@
 # LabBrain — MCP Setup Guide
 
 **Version:** 1.0 | **Date:** 2026-05-30
-**Deploy lane:** Hetzner Cloud (Frankfurt) + Supabase (Frankfurt)
+**Deploy lane:** Contabo VPS (Germany/EU) + Supabase (Frankfurt) — founder override (replaces Hetzner)
 **Audience:** This guide is for Claude Code, not for you. You hand it to Claude Code on Friday evening and it follows these steps.
 
 ---
@@ -17,12 +17,12 @@ Complete these 8 steps before opening Claude Code. Each takes 5–10 minutes.
 3. Note down: Project URL, `anon` key, `service_role` key
 4. Enable pgvector: Dashboard → Extensions → search "vector" → Enable
 
-### 2. Create Hetzner Server
+### 2. Create Contabo VPS (founder override — replaces Hetzner)
 
-1. Go to [hetzner.com](https://hetzner.com/cloud) → New server
-2. Location: **Nuremberg (EU-Central)**
+1. Go to [contabo.com](https://contabo.com) → Cloud VPS
+2. Region: **European Union (Germany)** — mandatory for data residency
 3. Image: **Ubuntu 22.04**
-4. Type: **CX21** (2 vCPU, 4GB RAM, €5.52/mo)
+4. Type: **VPS S** or higher (4 vCPU / 8GB is comfortable for MVP)
 5. Add SSH key (your local `~/.ssh/id_rsa.pub`)
 6. Name: `labbrain-prod`
 7. Note the server IP
@@ -31,8 +31,8 @@ Complete these 8 steps before opening Claude Code. Each takes 5–10 minutes.
 
 In your DNS provider (Cloudflare recommended):
 ```
-A    @        → [Hetzner IP]
-A    www      → [Hetzner IP]
+A    @        → [Contabo IP]
+A    www      → [Contabo IP]
 ```
 Wait for DNS propagation (~5 min with Cloudflare).
 
@@ -66,12 +66,12 @@ Wait for DNS propagation (~5 min with Cloudflare).
 
 ---
 
-## Hetzner Server Setup
+## Contabo Server Setup
 
 SSH into your server, then run these commands once:
 
 ```bash
-ssh root@[your-hetzner-ip]
+ssh root@[your-contabo-ip]
 
 # Update system
 apt update && apt upgrade -y
@@ -195,13 +195,6 @@ On your local machine, add to `~/.claude/mcp.json`:
         "--supabase-service-role-key", "[service-role-key]"
       ]
     },
-    "hetzner": {
-      "command": "npx",
-      "args": [
-        "-y", "@hetzner/mcp-server@latest",
-        "--api-token", "[hetzner-api-token]"
-      ]
-    },
     "resend": {
       "command": "npx",
       "args": [
@@ -229,7 +222,7 @@ Read these files before writing a single line of code:
   EO-Brain/4-Architecture/mcp-setup-guide.md    (deploy instructions)
 
 Stack: Next.js 14 App Router + TypeScript + Tailwind RTL + Supabase + pgvector + OpenAI
-Deploy: Hetzner Cloud Frankfurt — server IP [X.X.X.X], domain labbrain.io
+Deploy: Contabo VPS (Germany/EU) — server IP [X.X.X.X], domain labbrain.io
 Start: /1-eo-dev-start
 
 Weekend MVP = all 7 loops wired (auth/domain/money/notify/deploy/observability/compliance).
@@ -253,7 +246,7 @@ curl https://labbrain.io/api/health
 
 | Service | Monthly |
 |---------|---------|
-| Hetzner CX21 | €5.52 |
+| Contabo VPS S | ~€6–8 |
 | Supabase Pro | $25.00 |
 | OpenAI API | ~$5–10 |
 | LlamaParse | ~$0–15 |

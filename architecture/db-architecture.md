@@ -295,7 +295,7 @@ Bucket policy: `lab-documents` is private. Access via signed URLs generated serv
 ## Backup Strategy
 
 - Supabase Pro: automatic daily backups, 7-day retention
-- Weekly: `pg_dump` via cron job on Hetzner → compress → upload to Hetzner Object Storage (Germany)
+- Weekly: `pg_dump` via cron job on the Contabo VPS → compress → upload to EU object storage (Germany)
 - Restore test: monthly manual restore to staging environment
 
 ---

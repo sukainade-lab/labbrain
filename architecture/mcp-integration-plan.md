@@ -10,7 +10,7 @@
 | MCP | Phase | Purpose | Who uses it |
 |-----|-------|---------|-------------|
 | Supabase MCP | Weekend MVP | DB queries, migrations, RLS testing during build | Claude Code |
-| Hetzner MCP | Weekend MVP | Server management, deploy, health checks | Claude Code |
+| Contabo VPS (SSH, no MCP) | Weekend MVP | Server management, deploy, health checks via SSH + deploy.sh | Claude Code |
 | Resend MCP | Weekend MVP | Email template testing, send verification | Claude Code |
 | PostHog MCP | Month 2 | Query analytics events, track funnel | Cowork (founder) |
 | Tap Payments MCP | v2 | Payment reconciliation, subscription status | Claude Code |
@@ -54,30 +54,20 @@
 
 ---
 
-### 2. Hetzner MCP
+### 2. Contabo VPS (founder override — no first-party MCP)
+
+Contabo has no first-party MCP server (unlike Hetzner). Server management is via
+plain SSH + the documented `deploy.sh`. No MCP config needed.
 
 **What it enables:**
-- Claude Code checks server health during deploy
-- View server status, bandwidth, CPU during load testing
-- Restart server processes if needed during build
+- Claude Code checks server health during deploy via `GET /api/health` (AC-5.1)
+- View server status / CPU / RAM over SSH (`ssh root@<contabo-ip>`, `htop`, `pm2 status`)
+- Restart processes with `pm2 reload` (zero-downtime) during build
 
-**Setup:**
-```bash
-{
-  "mcpServers": {
-    "hetzner": {
-      "command": "npx",
-      "args": ["-y", "@hetzner/mcp-server@latest",
-               "--api-token", "${HETZNER_API_TOKEN}"]
-    }
-  }
-}
-```
-
-**Key operations:**
-- `get_server_status` — confirm deploy landed
-- `list_servers` — see running instances
-- `get_server_metrics` — CPU/RAM during load tests
+**Key operations (over SSH, not MCP):**
+- `curl https://<domain>/api/health` — confirm deploy landed
+- `pm2 status` / `pm2 logs` — see running instances + logs
+- `docker compose ps` — container health
 
 ---
 
@@ -215,8 +205,7 @@ NEXT_PUBLIC_SENTRY_DSN=...
 NEXT_PUBLIC_POSTHOG_KEY=...
 NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
 
-# Hetzner (for MCP, not app)
-HETZNER_API_TOKEN=...
+# Contabo VPS: no API token / MCP — managed via SSH + deploy.sh
 
 # Admin notification email
 ADMIN_NOTIFY_EMAIL=yousef@labbrain.io
