@@ -30,8 +30,15 @@ describe("Story 3 — language detection (@AC-3.1)", () => {
     expect(detectLang("What is the calibration interval?")).toBe("en");
   });
 
-  it("treats mixed AR+EN (any Arabic present) as Arabic", () => {
+  it("keeps an Arabic question with English technical terms as Arabic", () => {
+    // Majority-script by word: 4 Arabic words vs 4 English terms → tie → Arabic.
     expect(detectLang("ما هو الـ calibration interval لـ class E2؟")).toBe("ar");
+  });
+
+  it("treats a mostly-English question with one stray Arabic word as English", () => {
+    // The bug the majority-script fix closes: first-Arabic-wins mislabelled this
+    // (AC-3.1/3.5) — an EN engineer would have gotten an Arabic answer + refusal.
+    expect(detectLang("What is the calibration interval for المعايرة?")).toBe("en");
   });
 
   it("defaults bare technical English to English", () => {

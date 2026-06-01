@@ -52,3 +52,9 @@ as $$
   order by dc.embedding <=> query_embedding
   limit match_count;
 $$;
+
+-- drop+recreate discards the old function's privileges. Make EXECUTE explicit
+-- for the authenticated role so retrieval can't silently break if a later
+-- migration (or Supabase hardening) revokes the PUBLIC default we'd otherwise
+-- be relying on.
+grant execute on function public.match_document_chunks(vector(1536), int, float) to authenticated;

@@ -15,6 +15,10 @@ export interface QaResult {
   citations: Citation[];
   found: boolean;
   lang: Lang;
+  // True only when a not-found is caused by an empty corpus (no indexed
+  // documents), not by a real miss. Lets the UI nudge "upload first" instead of
+  // implying the lab's documents were searched and came up short (AC-3.5 UX).
+  emptyCorpus: boolean;
 }
 
 // The Q&A orchestrator. `supabase` MUST be the caller's user-scoped client (cookie
@@ -44,6 +48,7 @@ export async function ask(params: {
   let answer: string;
   let citations: Citation[];
   let found: boolean;
+  let emptyCorpus = false;
 
   if (chunks.length === 0) {
     // AC-3.5 (P0 safety contract) — nothing cleared the 0.75 gate. Return the
@@ -52,6 +57,14 @@ export async function ask(params: {
     answer = NOT_FOUND[lang];
     citations = [];
     found = false;
+    // Distinguish "no documents to search" from "searched, no match" so the UI
+    // can guide a brand-new lab to upload first. Cheap head count, only on the
+    // miss path; RLS scopes it to this tenant.
+    const { count } = await supabase
+      .from("documents")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "ready");
+    emptyCorpus = (count ?? 0) === 0;
   } else {
     answer = await generateAnswer({ question, chunks, lang });
     // The model can still refuse if the excerpts are off-topic (AC-3.3). The
@@ -76,5 +89,5 @@ export async function ask(params: {
   });
   if (logError) throw new Error(`failed to log query: ${logError.message}`);
 
-  return { answer, citations, found, lang };
+  return { answer, citations, found, lang, emptyCorpus };
 }

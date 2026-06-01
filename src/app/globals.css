@@ -17,9 +17,3 @@ body {
   background: var(--bg);
   color: #e2e8f0;
 }
-
-/* English technical terms inside Arabic text stay LTR and visually isolated. */
-.bidi-term {
-  unicode-bidi: isolate;
-  direction: ltr;
-}

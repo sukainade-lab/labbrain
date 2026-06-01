@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 // AC-3.1 — ask in Arabic or English; RTL default, EN renders LTR inline.
 // AC-3.4/3.6 — every found answer carries a citation badge (📄 doc — الصفحة N);
@@ -24,6 +25,7 @@ interface QaMessage {
   citations: Citation[];
   found: boolean;
   lang: "ar" | "en";
+  emptyCorpus: boolean;
 }
 
 interface QaResponse {
@@ -31,6 +33,7 @@ interface QaResponse {
   citations: Citation[];
   found: boolean;
   lang: "ar" | "en";
+  emptyCorpus: boolean;
 }
 
 export default function QaPage() {
@@ -63,7 +66,8 @@ export default function QaPage() {
           answer: r.answer,
           citations: r.citations ?? [],
           found: r.found,
-          lang: r.lang
+          lang: r.lang,
+          emptyCorpus: r.emptyCorpus ?? false
         },
         ...prev
       ]);
@@ -146,20 +150,23 @@ export default function QaPage() {
               </div>
             )}
 
-            {/* AC-3.4 — citation badge only when grounded. */}
+            {/* AC-3.4 — citation badge only when grounded. The badge links to the
+                source document so the engineer can open it and verify the clause
+                in context — the whole point of source-traced answers. */}
             {msg.found && msg.citations.length > 0 && (
               <div className="mt-3 flex flex-col gap-2">
                 {msg.citations.map((c, i) => (
-                  <div
+                  <Link
                     key={`${c.document_id}-${c.page_number ?? i}`}
-                    className="flex items-start gap-2.5 rounded-lg border border-[#D97706] bg-[#1a1f2e] px-3.5 py-2.5"
+                    href={`/documents?doc=${c.document_id}`}
+                    className="group flex items-start gap-2.5 rounded-lg border border-[#D97706] bg-[#1a1f2e] px-3.5 py-2.5 transition hover:bg-[#22293a] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F59E0B]"
                   >
                     <span className="text-lg leading-none">📄</span>
                     <div className="min-w-0">
-                      <bdi className="block text-xs font-semibold text-[#F59E0B]">
+                      <bdi className="block text-xs font-semibold text-[#F59E0B] underline-offset-2 group-hover:underline">
                         {c.document_name}
                       </bdi>
-                      <div className="mt-0.5 text-[11px] text-slate-400">
+                      <div className="mt-0.5 text-[11px] text-slate-300">
                         {c.section ? (
                           <>
                             <bdi>{c.section}</bdi>
@@ -167,17 +174,35 @@ export default function QaPage() {
                           </>
                         ) : null}
                         {c.page_number != null && (
-                          <span className="text-slate-300">الصفحة {c.page_number}</span>
+                          <span>الصفحة {c.page_number}</span>
                         )}
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
 
-            {/* AC-3.5 — refusal styling when nothing cleared the gate. */}
-            {!msg.found && (
+            {/* AC-3.5 — refusal styling when nothing cleared the gate. An empty
+                corpus gets a distinct nudge: a new lab hasn't uploaded anything to
+                search yet, so guide it to /documents rather than implying its
+                files were searched and missed. */}
+            {!msg.found && msg.emptyCorpus && (
+              <div className="mt-3 rounded-lg border border-[#334155] bg-[#1a1f2e] px-3.5 py-3 text-xs text-slate-300">
+                <p className="font-semibold text-slate-100">لا توجد وثائق للبحث فيها بعد.</p>
+                <p className="mt-1 leading-6">
+                  ارفع وثائق مختبرك أولاً، وبعد فهرستها ستحصل على إجابات مدعومة بالمصدر.
+                </p>
+                <Link
+                  href="/documents"
+                  className="mt-2 inline-flex min-h-[44px] items-center font-semibold text-[#F59E0B] hover:underline"
+                >
+                  رفع الوثائق ←
+                </Link>
+              </div>
+            )}
+
+            {!msg.found && !msg.emptyCorpus && (
               <div className="mt-3 rounded-lg border border-[#92400e] bg-[#3b1c08] px-3.5 py-2.5 text-xs text-[#fcd34d]">
                 {msg.answer}
               </div>

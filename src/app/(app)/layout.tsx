@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { LogoutButton } from "@/components/layout/logout-button";
+import { NavLinks } from "@/components/layout/nav-links";
 
 // Shell layout for authenticated app routes. Route protection is enforced in
 // proxy.ts (gates the (app) group behind a Supabase session).
@@ -8,20 +8,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen">
       <aside className="flex w-56 flex-col border-l border-slate-800 bg-slate-900/40 p-6">
         <div className="text-lg font-bold text-amber-500">LabBrain</div>
-        <nav className="mt-8 space-y-2 text-slate-300">
-          <Link href="/dashboard" className="block hover:text-amber-400">
-            لوحة التحكم
-          </Link>
-          <Link href="/documents" className="block hover:text-amber-400">
-            الوثائق
-          </Link>
-          <Link href="/qa" className="block hover:text-amber-400">
-            الأسئلة والأجوبة
-          </Link>
-          <Link href="/admin" className="block hover:text-amber-400">
-            الإدارة
-          </Link>
-        </nav>
+        <NavLinks />
         <div className="mt-auto pt-8">
           <LogoutButton />
         </div>

@@ -51,6 +51,14 @@ describe.skipIf(!hasLiveSupabase)("Story 3 — Q&A orchestrator (live)", () => {
   let client: SupabaseClient;
   let tenantId: string;
   let userId: string;
+  let otherTenantId: string; // Lab B — used to prove cross-tenant isolation.
+  let emptyTenantId: string; // Lab C — a brand-new lab with no documents at all.
+  let emptyUserId: string;
+  let emptyClient: SupabaseClient; // signed in as Lab C.
+
+  // Lab B's chunk sits at a distinct basis index so Lab A's own chunk (index 0)
+  // scores 0 against a query at B's index. Filtering must hide B regardless.
+  const OTHER_INDEX = 7;
 
   beforeAll(async () => {
     admin = createClient(url!, serviceKey!, {
@@ -104,6 +112,55 @@ describe.skipIf(!hasLiveSupabase)("Story 3 — Q&A orchestrator (live)", () => {
     });
     if (cErr) throw cErr;
 
+    // ── Lab B (the adversary tenant) ─────────────────────────────────────────
+    // A second, fully independent lab whose one chunk sits at OTHER_INDEX. We
+    // never sign in as Lab B; it exists only so that a Lab A query aimed exactly
+    // at Lab B's embedding proves the RPC's tenant filter — not cosine distance —
+    // is what hides B. (Lab A's own chunk is at index 0 → scores 0 here too.)
+    const { data: otherTenant, error: otErr } = await admin
+      .from("tenants")
+      .insert({ name: "QA-Lab-B" })
+      .select()
+      .single();
+    if (otErr) throw otErr;
+    otherTenantId = otherTenant.id;
+
+    const otherEmail = `qa-owner-b-${Date.now()}-${Math.random().toString(36).slice(2)}@labbrain.test`;
+    const { data: otherCreated, error: ouErr } = await admin.auth.admin.createUser({
+      email: otherEmail,
+      password: PASSWORD,
+      email_confirm: true
+    });
+    if (ouErr) throw ouErr;
+
+    const { error: otherLinkErr } = await admin
+      .from("users")
+      .insert({ id: otherCreated.user.id, tenant_id: otherTenantId, email: otherEmail, role: "owner" });
+    if (otherLinkErr) throw otherLinkErr;
+
+    const { data: otherDoc, error: odErr } = await admin
+      .from("documents")
+      .insert({
+        tenant_id: otherTenantId,
+        filename: "وثيقة المختبر ب — سرية.pdf",
+        storage_path: `${otherTenantId}/secret.pdf`,
+        status: "ready"
+      })
+      .select()
+      .single();
+    if (odErr) throw odErr;
+
+    const { error: ocErr } = await admin.from("document_chunks").insert({
+      tenant_id: otherTenantId,
+      document_id: otherDoc.id,
+      chunk_index: 0,
+      content: "سر المختبر ب: تُعاير الموازين كل 6 أشهر.",
+      page_number: 3,
+      section: "2.1",
+      embedding: basisLiteral(OTHER_INDEX)
+    });
+    if (ocErr) throw ocErr;
+
     client = createClient(url!, anonKey!, {
       auth: { autoRefreshToken: false, persistSession: false }
     });
@@ -112,10 +169,46 @@ describe.skipIf(!hasLiveSupabase)("Story 3 — Q&A orchestrator (live)", () => {
       password: PASSWORD
     });
     if (signInErr) throw signInErr;
+
+    // ── Lab C (empty corpus) ─────────────────────────────────────────────────
+    // A brand-new lab: tenant + owner, but zero documents. Proves the
+    // empty-corpus signal (UI nudges "upload first") versus a real miss.
+    const { data: emptyTenant, error: etErr } = await admin
+      .from("tenants")
+      .insert({ name: "QA-Lab-C" })
+      .select()
+      .single();
+    if (etErr) throw etErr;
+    emptyTenantId = emptyTenant.id;
+
+    const emptyEmail = `qa-owner-c-${Date.now()}-${Math.random().toString(36).slice(2)}@labbrain.test`;
+    const { data: emptyCreated, error: euErr } = await admin.auth.admin.createUser({
+      email: emptyEmail,
+      password: PASSWORD,
+      email_confirm: true
+    });
+    if (euErr) throw euErr;
+    emptyUserId = emptyCreated.user.id;
+
+    const { error: emptyLinkErr } = await admin
+      .from("users")
+      .insert({ id: emptyUserId, tenant_id: emptyTenantId, email: emptyEmail, role: "owner" });
+    if (emptyLinkErr) throw emptyLinkErr;
+
+    emptyClient = createClient(url!, anonKey!, {
+      auth: { autoRefreshToken: false, persistSession: false }
+    });
+    const { error: emptySignInErr } = await emptyClient.auth.signInWithPassword({
+      email: emptyEmail,
+      password: PASSWORD
+    });
+    if (emptySignInErr) throw emptySignInErr;
   });
 
   afterAll(async () => {
     if (admin && tenantId) await admin.from("tenants").delete().eq("id", tenantId);
+    if (admin && otherTenantId) await admin.from("tenants").delete().eq("id", otherTenantId);
+    if (admin && emptyTenantId) await admin.from("tenants").delete().eq("id", emptyTenantId);
   });
 
   beforeEach(() => {
@@ -180,6 +273,8 @@ describe.skipIf(!hasLiveSupabase)("Story 3 — Q&A orchestrator (live)", () => {
     expect(result.answer).toBe(NOT_FOUND_AR);
     expect(result.citations).toEqual([]);
     expect(generateAnswer).not.toHaveBeenCalled();
+    // The lab HAS a ready document — this is a genuine miss, not an empty corpus.
+    expect(result.emptyCorpus).toBe(false);
 
     const { data: rows, error } = await admin
       .from("queries")
@@ -210,5 +305,45 @@ describe.skipIf(!hasLiveSupabase)("Story 3 — Q&A orchestrator (live)", () => {
     expect(result.lang).toBe("en");
     expect(result.answer).toBe(NOT_FOUND.en);
     expect(result.citations).toEqual([]);
+  });
+
+  it("@AC-3.2 (P0) Lab A querying Lab B's exact embedding retrieves nothing", async () => {
+    // The hardest isolation case: Lab A fires a query embedding that lands EXACTLY
+    // on Lab B's chunk (cosine 1.0). If the RPC filtered on cosine alone, B's
+    // secret would surface cross-tenant — the worst possible compliance breach.
+    // The tenant filter runs BEFORE cosine, so Lab A sees only its own corpus,
+    // where this embedding scores 0 (orthogonal to index 0) → below the gate.
+    // Result: not-found, and the model is NEVER handed Lab B's content.
+    vi.mocked(embedTexts).mockResolvedValueOnce([basisArray(OTHER_INDEX)]);
+
+    const result = await ask({
+      supabase: client, // still signed in as Lab A
+      tenantId,
+      userId,
+      question: "ما هو سر المختبر ب؟"
+    });
+
+    expect(result.found).toBe(false);
+    expect(result.citations).toEqual([]);
+    expect(generateAnswer).not.toHaveBeenCalled();
+  });
+
+  it("@AC-3.5 a lab with no documents → not-found flagged as empty corpus", async () => {
+    // Lab C has never uploaded anything. The miss must be flagged emptyCorpus so
+    // the UI nudges "upload first" rather than implying its files were searched.
+    // The model is never called — there is nothing to ground against.
+    vi.mocked(embedTexts).mockResolvedValueOnce([basisArray(0)]);
+
+    const result = await ask({
+      supabase: emptyClient, // signed in as Lab C (zero documents)
+      tenantId: emptyTenantId,
+      userId: emptyUserId,
+      question: "What is the calibration interval for class E2 weights?"
+    });
+
+    expect(result.found).toBe(false);
+    expect(result.emptyCorpus).toBe(true);
+    expect(result.citations).toEqual([]);
+    expect(generateAnswer).not.toHaveBeenCalled();
   });
 });

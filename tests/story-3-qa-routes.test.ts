@@ -91,7 +91,8 @@ describe("Story 3 — /api/qa route handler", () => {
         { document_id: "d1", document_name: "SOP.pdf", section: "5.3", page_number: 11, similarity: 0.93 }
       ],
       found: true,
-      lang: "ar"
+      lang: "ar",
+      emptyCorpus: false
     });
 
     const res = await postQuestion({ question: "ما فترة معايرة كتل الفئة E2؟" });
@@ -116,7 +117,8 @@ describe("Story 3 — /api/qa route handler", () => {
       answer: "لم أجد إجابة لهذا السؤال في وثائقكم.",
       citations: [],
       found: false,
-      lang: "ar"
+      lang: "ar",
+      emptyCorpus: false
     });
 
     const res = await postQuestion({ question: "سؤال لا توجد له وثيقة" });
