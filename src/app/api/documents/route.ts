@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { uploadMetaSchema, MAX_UPLOAD_BYTES, resolveMime } from "@/lib/validation/documents";
-import { ingestDocument } from "@/lib/documents/ingest";
-import { DocLimitError } from "@/lib/documents/limits";
+import { createDocument, processDocument } from "@/lib/documents/ingest";
+import { DocLimitError, getDocPlanLimit } from "@/lib/documents/limits";
 
-// POST /api/documents — multipart upload → store → parse → index (AC-2.1…2.3, 2.6).
+// POST /api/documents — multipart upload → store → (async) parse + index (AC-2.1…2.3, 2.6).
 export async function POST(req: Request) {
   const supabase = await createClient();
   const {
@@ -53,14 +53,30 @@ export async function POST(req: Request) {
 
   try {
     const admin = createAdminClient();
-    const result = await ingestDocument({
+    // Synchronous half: cap check + store + create the 'parsing' row.
+    const { documentId, status } = await createDocument({
       admin,
       tenantId: me.tenant_id,
       file,
       filename: meta.data.filename,
       mimeType: meta.data.mimeType
     });
-    return NextResponse.json(result, { status: 201 });
+
+    // Parse + index off the response path so a slow LlamaParse poll never holds
+    // the connection open. The row is already 'parsing'; the UI polls to 'ready'.
+    after(() =>
+      processDocument({
+        admin,
+        tenantId: me.tenant_id,
+        documentId,
+        file,
+        filename: meta.data.filename
+      }).catch(() => {
+        // processDocument already flipped the row to 'failed'; nothing to add.
+      })
+    );
+
+    return NextResponse.json({ documentId, status }, { status: 201 });
   } catch (err) {
     if (err instanceof DocLimitError) {
       return NextResponse.json(
@@ -77,7 +93,8 @@ export async function POST(req: Request) {
   }
 }
 
-// GET /api/documents — the tenant's document list (AC-2.5). RLS scopes the rows.
+// GET /api/documents — the tenant's document list + plan/cap context (AC-2.5,
+// AC-2.6). RLS scopes the rows; the cap line lets the UI show usage runway.
 export async function GET() {
   const supabase = await createClient();
   const {
@@ -91,5 +108,21 @@ export async function GET() {
     .order("created_at", { ascending: false });
   if (error) return NextResponse.json({ error: "تعذّر جلب الوثائق" }, { status: 500 });
 
-  return NextResponse.json({ documents: data ?? [] });
+  const documents = data ?? [];
+
+  // Plan + cap for the usage line. RLS already scoped the list; resolve the
+  // tenant's tier so the UI can render "X / 50 · الاستخدام Y%".
+  const { data: me } = await supabase
+    .from("users")
+    .select("tenant_id")
+    .eq("id", user.id)
+    .single();
+  let plan = "starter";
+  let limit = 50;
+  if (me) {
+    const admin = createAdminClient();
+    ({ plan, limit } = await getDocPlanLimit(admin, me.tenant_id));
+  }
+
+  return NextResponse.json({ documents, count: documents.length, plan, limit });
 }

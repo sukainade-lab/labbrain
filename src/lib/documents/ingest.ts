@@ -9,7 +9,7 @@ type Admin = ReturnType<typeof createAdminClient>;
 
 export const DOCUMENTS_BUCKET = "documents";
 
-export interface IngestInput {
+export interface CreateDocumentInput {
   admin: Admin;
   tenantId: string;
   file: Blob;
@@ -17,23 +17,23 @@ export interface IngestInput {
   mimeType: string;
 }
 
-export interface IngestResult {
+export interface CreateDocumentResult {
   documentId: string;
-  status: "ready";
-  pageCount: number;
-  chunkCount: number;
+  storagePath: string;
+  status: "parsing";
 }
 
-// Full inline pipeline with DB status checkpoints (AC-2.1…2.3). Cap is checked
-// first (AC-2.6 → DocLimitError → 402 at the route). After the row exists, any
-// failure flips status to 'failed' so the UI can surface it (AC-2.2).
-export async function ingestDocument({
+// Synchronous half of ingestion (AC-2.1 / AC-2.6) — runs on the request thread:
+// enforce the cap, store the file under the tenant namespace, create the row at
+// 'parsing'. Returns immediately so the route can respond 201 while parse/index
+// run off the response path (processDocument). Throws DocLimitError (→402) at cap.
+export async function createDocument({
   admin,
   tenantId,
   file,
   filename,
   mimeType
-}: IngestInput): Promise<IngestResult> {
+}: CreateDocumentInput): Promise<CreateDocumentResult> {
   await assertDocAvailable(admin, tenantId); // throws DocLimitError when at cap
 
   const documentId = randomUUID();
@@ -45,7 +45,7 @@ export async function ingestDocument({
     .upload(storagePath, file, { contentType: mimeType, upsert: false });
   if (upErr) throw new Error(`storage upload failed: ${upErr.message}`);
 
-  // Row starts at 'parsing' (AC-2.2 pipeline).
+  // Row starts at 'parsing' (AC-2.2 pipeline). The UI polls it to 'ready'.
   const { error: insErr } = await admin.from("documents").insert({
     id: documentId,
     tenant_id: tenantId,
@@ -58,18 +58,64 @@ export async function ingestDocument({
     throw new Error(`document insert failed: ${insErr.message}`);
   }
 
+  return { documentId, storagePath, status: "parsing" };
+}
+
+export interface ProcessDocumentInput {
+  admin: Admin;
+  tenantId: string;
+  documentId: string;
+  file: Blob;
+  filename: string;
+}
+
+export interface ProcessDocumentResult {
+  status: "ready";
+  pageCount: number;
+  chunkCount: number;
+}
+
+// Flip a document's status, throwing on a failed write so a silently-failed
+// update can't strand a row in a non-terminal state unnoticed.
+async function setDocumentStatus(
+  admin: Admin,
+  documentId: string,
+  fields: Record<string, unknown>
+): Promise<void> {
+  const { error } = await admin.from("documents").update(fields).eq("id", documentId);
+  if (error) {
+    throw new Error(`status update failed (${JSON.stringify(fields)}): ${error.message}`);
+  }
+}
+
+// Background half of ingestion (AC-2.2 / AC-2.3): parse → index → embed → ready.
+// Runs off the request thread (via the route's `after()`), so a slow LlamaParse
+// poll never holds the HTTP response open and the UI can render the real
+// parsing→indexing→ready progression. Any failure flips the row to 'failed'
+// (best-effort) and rethrows so the caller/logs can observe it.
+export async function processDocument({
+  admin,
+  tenantId,
+  documentId,
+  file,
+  filename
+}: ProcessDocumentInput): Promise<ProcessDocumentResult> {
   try {
     // Parse (AC-2.2).
     const { blocks, pageCount } = await parseDocument(file, filename);
-    await admin
-      .from("documents")
-      .update({ status: "indexing", page_count: pageCount })
-      .eq("id", documentId);
+    await setDocumentStatus(admin, documentId, { status: "indexing", page_count: pageCount });
 
     // Chunk + embed + persist (AC-2.3).
     const chunks = chunkBlocks(blocks);
     if (chunks.length > 0) {
       const embeddings = await embedTexts(chunks.map((c) => c.content));
+      // Guard the index map below: a short batch return would otherwise feed
+      // toVectorLiteral(undefined) and corrupt the row silently.
+      if (embeddings.length !== chunks.length) {
+        throw new Error(
+          `embedding count mismatch: ${embeddings.length} vectors for ${chunks.length} chunks`
+        );
+      }
       const rows = chunks.map((c, i) => ({
         tenant_id: tenantId,
         document_id: documentId,
@@ -83,19 +129,21 @@ export async function ingestDocument({
       if (chErr) throw new Error(`chunk insert failed: ${chErr.message}`);
     }
 
-    await admin.from("documents").update({ status: "ready" }).eq("id", documentId);
-
-    return { documentId, status: "ready", pageCount, chunkCount: chunks.length };
+    await setDocumentStatus(admin, documentId, { status: "ready" });
+    return { status: "ready", pageCount, chunkCount: chunks.length };
   } catch (err) {
+    // Best-effort flip to 'failed'; surface the original error regardless.
     await admin.from("documents").update({ status: "failed" }).eq("id", documentId);
     throw err;
   }
 }
 
-// Delete a document's Storage object + cascade its chunks (AC-2.5). The FK on
-// document_chunks cascades on row delete; Storage needs an explicit removal.
+// Delete a document's row (FK-cascades its chunks) then its Storage object
+// (AC-2.5). Row-first ordering: if the Storage removal fails afterward, a
+// leftover object is harmless and GC-able, whereas deleting Storage first then
+// failing the row delete would leave a dangling reference to missing bytes.
 export async function deleteDocument(admin: Admin, storagePath: string, documentId: string) {
-  await admin.storage.from(DOCUMENTS_BUCKET).remove([storagePath]);
   const { error } = await admin.from("documents").delete().eq("id", documentId);
   if (error) throw new Error(`document delete failed: ${error.message}`);
+  await admin.storage.from(DOCUMENTS_BUCKET).remove([storagePath]);
 }

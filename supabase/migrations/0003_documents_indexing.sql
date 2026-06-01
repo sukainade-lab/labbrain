@@ -66,3 +66,11 @@ as $$
   order by dc.embedding <=> query_embedding
   limit match_count;
 $$;
+
+-- ── 5. Swap the chunk vector index ivfflat → HNSW (AC-2.4 retrieval) ──────────
+-- The recorded stack decision (CLAUDE.md / tech-stack-decision.md) specifies an
+-- HNSW index; 0001 bootstrapped with ivfflat. HNSW gives better recall/latency
+-- for cosine search and needs no `lists` tuning. Replace it here.
+drop index if exists chunks_embedding_idx;
+create index chunks_embedding_idx on document_chunks
+  using hnsw (embedding vector_cosine_ops);

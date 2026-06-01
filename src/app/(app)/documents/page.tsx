@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 // AC-2.5 — document library: name, date, page count, status, delete.
-// AC-2.1/2.6 — upload control with status states + over-cap upgrade message.
+// AC-2.1/2.6 — upload control with live status states + over-cap upgrade message.
 // RTL-first, IBM Plex Arabic, brand tokens (Navy #1B2A3D / Amber #D97706 / BG
 // #0F172A / border #334155), matches docs/ux-reference/product-demo.jsx.
 
@@ -15,6 +15,13 @@ interface DocRow {
   created_at: string;
 }
 
+interface DocsResponse {
+  documents: DocRow[];
+  count: number;
+  plan: string;
+  limit: number;
+}
+
 const STATUS: Record<DocRow["status"], { label: string; bg: string; color: string }> = {
   pending: { label: "بالانتظار", bg: "#1e3a5f", color: "#93c5fd" },
   parsing: { label: "يُحلَّل...", bg: "#1e3a5f", color: "#93c5fd" },
@@ -22,6 +29,11 @@ const STATUS: Record<DocRow["status"], { label: string; bg: string; color: strin
   ready: { label: "جاهز", bg: "#064e3b", color: "#6ee7b7" },
   failed: { label: "خطأ", bg: "#7f1d1d", color: "#fca5a5" }
 };
+
+// A document is still moving through the pipeline (poll until terminal).
+const ACTIVE: DocRow["status"][] = ["pending", "parsing", "indexing"];
+
+const PLAN_LABEL: Record<string, string> = { starter: "Starter", pro: "Pro" };
 
 const ACCEPT = ".pdf,.docx,.xlsx";
 
@@ -37,6 +49,8 @@ function fmtDate(iso: string): string {
 
 export default function DocumentsPage() {
   const [docs, setDocs] = useState<DocRow[]>([]);
+  const [plan, setPlan] = useState("starter");
+  const [limit, setLimit] = useState(50);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,12 +58,16 @@ export default function DocumentsPage() {
 
   // No synchronous setState here: the first await yields before any state
   // update, so the initial `loading` (true by default) covers the first load and
-  // post-upload/delete refreshes reuse the already-rendered list.
+  // post-upload/delete/poll refreshes reuse the already-rendered list.
   const load = useCallback(async () => {
     try {
       const res = await fetch("/api/documents");
-      const data = await res.json();
-      if (res.ok) setDocs(data.documents ?? []);
+      const data: DocsResponse = await res.json();
+      if (res.ok) {
+        setDocs(data.documents ?? []);
+        if (data.plan) setPlan(data.plan);
+        if (data.limit) setLimit(data.limit);
+      }
     } finally {
       setLoading(false);
     }
@@ -58,6 +76,17 @@ export default function DocumentsPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Parsing/indexing happen in the background; poll while any doc is non-terminal
+  // so the badge transitions parsing→indexing→ready render live (AC-2.2).
+  const hasActive = docs.some((d) => ACTIVE.includes(d.status));
+  useEffect(() => {
+    if (!hasActive) return;
+    const id = setInterval(() => {
+      load();
+    }, 2500);
+    return () => clearInterval(id);
+  }, [hasActive, load]);
 
   async function onUpload(file: File) {
     setError(null);
@@ -85,6 +114,9 @@ export default function DocumentsPage() {
     const res = await fetch(`/api/documents/${id}`, { method: "DELETE" });
     if (res.ok) setDocs((prev) => prev.filter((d) => d.id !== id));
   }
+
+  const planLabel = PLAN_LABEL[plan] ?? plan;
+  const usagePct = limit > 0 ? Math.round((docs.length / limit) * 100) : 0;
 
   return (
     <div>
@@ -145,9 +177,15 @@ export default function DocumentsPage() {
                     {ext}
                   </div>
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-medium text-slate-100">{doc.filename}</div>
+                    {/* <bdi> isolates mixed-script filenames (e.g. English SOP names)
+                        so the .pdf / digits don't reorder inside the RTL row. */}
+                    <bdi className="block truncate text-sm font-medium text-slate-100">
+                      {doc.filename}
+                    </bdi>
                     <div className="mt-0.5 text-[11px] text-slate-400">
-                      {doc.page_count ? `${doc.page_count} صفحة · ` : ""}
+                      {/* Ready docs always show their page count (matches the
+                          reference); pre-ready rows have no count yet. */}
+                      {doc.status === "ready" ? `${doc.page_count ?? 0} صفحة · ` : ""}
                       {fmtDate(doc.created_at)}
                     </div>
                   </div>
@@ -163,7 +201,7 @@ export default function DocumentsPage() {
                     type="button"
                     onClick={() => onDelete(doc.id)}
                     aria-label={`حذف ${doc.filename}`}
-                    className="min-h-[44px] px-2 text-slate-400 transition hover:text-[#fca5a5]"
+                    className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-slate-400 transition hover:text-[#fca5a5]"
                   >
                     حذف
                   </button>
@@ -174,9 +212,9 @@ export default function DocumentsPage() {
         )}
       </div>
 
-      {!loading && docs.length > 0 && (
+      {!loading && (
         <div className="mt-4 rounded-lg bg-[#1e3a5f] px-4 py-2.5 text-xs text-[#93c5fd]">
-          {docs.length} وثيقة
+          {docs.length} / {limit} وثيقة · خطة {planLabel} · الاستخدام {usagePct}%
         </div>
       )}
     </div>

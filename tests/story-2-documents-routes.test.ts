@@ -18,7 +18,10 @@ const h = vi.hoisted(() => ({
     user: null as { id: string } | null,
     me: null as { tenant_id: string } | null,
     docs: [] as unknown[]
-  }
+  },
+  // Captured `after()` callbacks — parse/index now run off the response path, so
+  // the test drives them explicitly to assert the background completion.
+  afterTasks: [] as Array<() => unknown | Promise<unknown>>
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -34,26 +37,47 @@ vi.mock("@/lib/supabase/server", () => ({
   })
 }));
 
-// Seam mocks: deterministic parse output + zero-vector embeddings (dim 1536).
+// Capture `after()` callbacks instead of letting Next schedule them (there is no
+// request scope in a unit test). Keep NextResponse and everything else real.
+vi.mock("next/server", async (importActual) => {
+  const actual = await importActual<typeof import("next/server")>();
+  return {
+    ...actual,
+    after: (cb: () => unknown | Promise<unknown>) => {
+      h.afterTasks.push(cb);
+    }
+  };
+});
+
+// Seam mocks (vi.fn so individual tests can force a failure): deterministic parse
+// output + zero-vector embeddings (dim 1536).
 vi.mock("@/lib/parsing/llamaparse", () => ({
-  parseDocument: async () => ({
+  parseDocument: vi.fn(async () => ({
     blocks: [
       { text: "ISO 17025 scope clause on calibration uncertainty.", pageNumber: 1, section: "Scope" },
       { text: "Measurement traceability requirements.", pageNumber: 2, section: "Traceability" }
     ],
     pageCount: 2
-  })
+  }))
 }));
 vi.mock("@/lib/ai/embeddings", async (importActual) => {
   const actual = await importActual<typeof import("@/lib/ai/embeddings")>();
   return {
     ...actual,
-    embedTexts: async (texts: string[]) => texts.map(() => new Array(1536).fill(0))
+    embedTexts: vi.fn(async (texts: string[]) => texts.map(() => new Array(1536).fill(0)))
   };
 });
 
 import { POST as documentsPOST, GET as documentsGET } from "@/app/api/documents/route";
 import { DELETE as documentDELETE } from "@/app/api/documents/[id]/route";
+import { parseDocument } from "@/lib/parsing/llamaparse";
+import { embedTexts } from "@/lib/ai/embeddings";
+
+// Run (and clear) every captured background `after()` task — i.e. drive the
+// document from 'parsing' to its terminal state.
+async function runAfterTasks() {
+  for (const task of h.afterTasks.splice(0)) await task();
+}
 
 function pdfFile(bytes: number, name = "iso.pdf", type = "application/pdf") {
   return new File([new Uint8Array(bytes)], name, { type });
@@ -131,32 +155,99 @@ describe.skipIf(!hasLiveSupabase)("Story 2 — document route handlers", () => {
     expect(res.status).toBe(413);
   });
 
-  it("@AC-2.2 @AC-2.3 POST a valid PDF → 201 ready, chunks + page_count persisted", async () => {
+  it("@AC-2.2 @AC-2.3 POST a valid PDF → 201 parsing, then background → ready + chunks", async () => {
     const tenantId = await makeTenant("HappyPath");
     h.state.user = { id: "u" };
     h.state.me = { tenant_id: tenantId };
 
+    // The response returns immediately at 'parsing' (parse/index run off-thread).
     const res = await postFile(pdfFile(2048));
     const data = await res.json();
     expect(res.status).toBe(201);
-    expect(data.status).toBe("ready");
-    expect(data.pageCount).toBe(2);
-    expect(data.chunkCount).toBeGreaterThan(0);
+    expect(data.status).toBe("parsing");
+
+    const { data: pending } = await admin
+      .from("documents")
+      .select("status, storage_path")
+      .eq("id", data.documentId)
+      .single();
+    expect(pending!.status).toBe("parsing");
+    pathsToReap.push(pending!.storage_path);
+
+    // Drive the background pipeline → 'ready' with page_count + chunks persisted.
+    await runAfterTasks();
 
     const { data: doc } = await admin
       .from("documents")
-      .select("status, page_count, storage_path")
+      .select("status, page_count")
       .eq("id", data.documentId)
       .single();
     expect(doc!.status).toBe("ready");
     expect(doc!.page_count).toBe(2);
+
+    const { count } = await admin
+      .from("document_chunks")
+      .select("id", { count: "exact", head: true })
+      .eq("document_id", data.documentId);
+    expect(count).toBeGreaterThan(0);
+  });
+
+  it("@AC-2.2 a parse failure flips the document to 'failed'", async () => {
+    const tenantId = await makeTenant("ParseFail");
+    h.state.user = { id: "u" };
+    h.state.me = { tenant_id: tenantId };
+    vi.mocked(parseDocument).mockRejectedValueOnce(new Error("llamaparse boom"));
+
+    // Upload + row creation still succeed → 201 parsing.
+    const res = await postFile(pdfFile(2048));
+    const data = await res.json();
+    expect(res.status).toBe(201);
+    expect(data.status).toBe("parsing");
+
+    await runAfterTasks(); // background pipeline throws → catch flips to 'failed'
+
+    const { data: doc } = await admin
+      .from("documents")
+      .select("status, storage_path")
+      .eq("id", data.documentId)
+      .single();
+    expect(doc!.status).toBe("failed");
+    pathsToReap.push(doc!.storage_path);
+
+    // No partial chunks should be left behind for a failed parse.
+    const { count } = await admin
+      .from("document_chunks")
+      .select("id", { count: "exact", head: true })
+      .eq("document_id", data.documentId);
+    expect(count).toBe(0);
+  });
+
+  it("@AC-2.3 an embedding count mismatch flips the document to 'failed'", async () => {
+    const tenantId = await makeTenant("EmbedMismatch");
+    h.state.user = { id: "u" };
+    h.state.me = { tenant_id: tenantId };
+    // Fewer vectors than chunks → processDocument must reject, not corrupt rows.
+    vi.mocked(embedTexts).mockResolvedValueOnce([]);
+
+    const res = await postFile(pdfFile(2048));
+    const data = await res.json();
+    expect(res.status).toBe(201);
+
+    await runAfterTasks();
+
+    const { data: doc } = await admin
+      .from("documents")
+      .select("status, storage_path")
+      .eq("id", data.documentId)
+      .single();
+    expect(doc!.status).toBe("failed");
     pathsToReap.push(doc!.storage_path);
 
     const { count } = await admin
       .from("document_chunks")
       .select("id", { count: "exact", head: true })
       .eq("document_id", data.documentId);
-    expect(count).toBe(data.chunkCount);
+    expect(count).toBe(0);
   });
 
   it("@AC-2.1 POST a DOCX the browser mislabels as octet-stream → 201 (extension fallback)", async () => {
@@ -170,12 +261,16 @@ describe.skipIf(!hasLiveSupabase)("Story 2 — document route handlers", () => {
     const res = await postFile(pdfFile(2048, "clause.docx", "application/octet-stream"));
     const data = await res.json();
     expect(res.status).toBe(201);
-    expect(data.status).toBe("ready");
+    expect(data.status).toBe("parsing");
+
+    await runAfterTasks();
+
     const { data: doc } = await admin
       .from("documents")
-      .select("storage_path")
+      .select("status, storage_path")
       .eq("id", data.documentId)
       .single();
+    expect(doc!.status).toBe("ready");
     pathsToReap.push(doc!.storage_path);
   });
 
@@ -207,13 +302,17 @@ describe.skipIf(!hasLiveSupabase)("Story 2 — document route handlers", () => {
     expect(res.status).toBe(401);
   });
 
-  it("@AC-2.5 GET authenticated → 200 with the document list", async () => {
+  it("@AC-2.5 @AC-2.6 GET authenticated → 200 with the list + plan/cap context", async () => {
+    const tenantId = await makeTenant("GetList", "starter");
     h.state.user = { id: "u" };
+    h.state.me = { tenant_id: tenantId };
     h.state.docs = [{ id: "d1", filename: "a.pdf", status: "ready", page_count: 3 }];
     const res = await documentsGET();
     const data = await res.json();
     expect(res.status).toBe(200);
     expect(data.documents).toHaveLength(1);
+    expect(data.plan).toBe("starter");
+    expect(data.limit).toBe(50);
   });
 
   // ── DELETE /api/documents/[id] ────────────────────────────────────────────────
@@ -255,7 +354,8 @@ describe.skipIf(!hasLiveSupabase)("Story 2 — document route handlers", () => {
 
     // Create via the real upload pipeline so storage + chunks exist.
     const created = await (await postFile(pdfFile(2048))).json();
-    expect(created.status).toBe("ready");
+    expect(created.status).toBe("parsing");
+    await runAfterTasks(); // drive to 'ready' so chunks are present to cascade
 
     const res = await callDelete(created.documentId);
     expect(res.status).toBe(200);
