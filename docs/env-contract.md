@@ -5,6 +5,7 @@ Copy `.env.example` → `.env.local` and fill. Never commit `.env.local`.
 | Variable | Source | Notes |
 |----------|--------|-------|
 | `APP_URL` | You | `http://localhost:3000` locally; your domain in prod |
+| `NODE_ENV` | Runtime | Not a secret. `development` locally; `production` on the VPS (set by the image) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API | Frankfurt region project |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API | Public anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API | **Server-only.** Never expose to client |

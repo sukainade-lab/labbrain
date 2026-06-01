@@ -1,0 +1,47 @@
+# LabBrain — Contabo VPS (Germany/EU) production stack.
+# AC-5.2 (app via docker-compose) + AC-5.3 (Caddy reverse proxy, auto-SSL).
+# Secrets come from .env on the VPS (never committed) — see docs/env-contract.md.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - labbrain
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # Set on the VPS: the custom domain Caddy serves + auto-provisions SSL for.
+      - LABBRAIN_DOMAIN=${LABBRAIN_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - labbrain
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  labbrain:

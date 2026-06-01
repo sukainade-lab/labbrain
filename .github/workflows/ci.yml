@@ -37,3 +37,44 @@ jobs:
         # esbuild dev-server SSRF in the vitest chain) never ship to production;
         # they're tracked but not release-blocking — matches the project convention.
         run: npm audit --omit=dev --audit-level=high
+
+  integration:
+    # Authoritative live gate (AC-5.7 + the P0 tenant-isolation suites). Runs the
+    # live integration tests against a real local Supabase so RLS + GoTrue +
+    # security-definer RPCs are actually exercised — the product's most important
+    # guarantee (Lesson L2/L3, docs/backlog/S5-ci-integration-db.md).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase (applies all migrations on a fresh DB)
+        run: supabase start
+
+      - name: Export Supabase env for tests
+        # Local demo anon/service keys are public, non-secret local-dev constants.
+        run: |
+          supabase status -o env > sb.env
+          echo "NEXT_PUBLIC_SUPABASE_URL=$(grep '^API_URL=' sb.env | cut -d= -f2- | tr -d '\"')" >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(grep '^ANON_KEY=' sb.env | cut -d= -f2- | tr -d '\"')" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(grep '^SERVICE_ROLE_KEY=' sb.env | cut -d= -f2- | tr -d '\"')" >> "$GITHUB_ENV"
+
+      - name: Live integration tests (serialized — shared DB)
+        # --no-file-parallelism: all live suites share one Supabase instance, so
+        # parallel files would race on seed/cleanup (Lesson L2).
+        run: npm run test -- --no-file-parallelism
+
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop

@@ -11,3 +11,6 @@ date,story,product,architecture,engineering,qa,ux,composite,decision
 2026-06-01,S4-pricing,6,8,9,9,8,80,bridge-gaps
 2026-06-01,S4-pricing,9,10,10,10,9,96,ship
 2026-06-02,S4-pricing,10,10,10,10,10,100,ship
+2026-06-02,S4-pricing,10,10,10,10,10,100,shipped-pr4-d562f19
+2026-06-02,S5-deploy,10,8,10,10,10,96,ship
+2026-06-02,S5-deploy,10,10,10,10,10,100,ship

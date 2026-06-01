@@ -4,6 +4,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { uploadMetaSchema, MAX_UPLOAD_BYTES, resolveMime } from "@/lib/validation/documents";
 import { createDocument, processDocument } from "@/lib/documents/ingest";
 import { DocLimitError, getDocPlanLimit } from "@/lib/documents/limits";
+import { track } from "@/lib/analytics/posthog-server";
+import { documentUploaded } from "@/lib/analytics/events";
+import { setSentryTenant } from "@/lib/observability/sentry";
+import { captureError } from "@/lib/observability/log";
 
 // POST /api/documents — multipart upload → store → (async) parse + index (AC-2.1…2.3, 2.6).
 export async function POST(req: Request) {
@@ -19,6 +23,9 @@ export async function POST(req: Request) {
     .eq("id", user.id)
     .single();
   if (!me) return NextResponse.json({ error: "غير مصرّح" }, { status: 401 });
+
+  // AC-5.4 — attribute anything captured after this point to the right lab.
+  setSentryTenant(me.tenant_id);
 
   const form = await req.formData().catch(() => null);
   const file = form?.get("file");
@@ -76,6 +83,9 @@ export async function POST(req: Request) {
       })
     );
 
+    // AC-5.5 — PII-free upload event (mime_type only; filename omitted).
+    void track(documentUploaded(user.id, { mimeType: meta.data.mimeType }));
+
     return NextResponse.json({ documentId, status }, { status: 201 });
   } catch (err) {
     if (err instanceof DocLimitError) {
@@ -89,6 +99,7 @@ export async function POST(req: Request) {
         { status: 402 }
       );
     }
+    captureError("documents", err);
     return NextResponse.json({ error: "تعذّرت معالجة الوثيقة" }, { status: 500 });
   }
 }

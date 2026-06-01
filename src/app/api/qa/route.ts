@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { ask } from "@/lib/qa/ask";
+import { track } from "@/lib/analytics/posthog-server";
+import { questionAsked } from "@/lib/analytics/events";
+import { setSentryTenant } from "@/lib/observability/sentry";
+import { captureError } from "@/lib/observability/log";
 
 // AC-3.1 — a question in either language; non-empty, bounded length.
 const qaSchema = z.object({
@@ -34,6 +38,9 @@ export async function POST(req: Request) {
     .single();
   if (!me) return NextResponse.json({ error: "غير مصرّح" }, { status: 401 });
 
+  // AC-5.4 — attribute anything captured after this point to the right lab.
+  setSentryTenant(me.tenant_id);
+
   try {
     const result = await ask({
       supabase,
@@ -41,8 +48,11 @@ export async function POST(req: Request) {
       userId: user.id,
       question: parsed.data.question
     });
+    // AC-5.5 — PII-free Q&A event: did we ground an answer, and in which language.
+    void track(questionAsked(user.id, { foundAnswer: result.found, lang: result.lang }));
     return NextResponse.json(result);
-  } catch {
+  } catch (err) {
+    captureError("qa", err);
     return NextResponse.json({ error: "تعذّرت معالجة السؤال" }, { status: 500 });
   }
 }

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { signupSchema } from "@/lib/validation/auth";
 import { provisionSignup, SignupError } from "@/lib/auth/provision";
 import { parseResume, onboardingNext } from "@/lib/payment/resume";
+import { track } from "@/lib/analytics/posthog-server";
+import { signupCompleted } from "@/lib/analytics/events";
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
@@ -22,6 +24,8 @@ export async function POST(req: Request) {
 
   try {
     const result = await provisionSignup(parsed.data, resume);
+    // AC-5.5 — best-effort, PII-free conversion event. Never blocks the 201.
+    void track(signupCompleted(result.userId));
     return NextResponse.json(
       { ok: true, tenantId: result.tenantId, next: onboardingNext(resume) },
       { status: 201 }
