@@ -173,22 +173,23 @@ describe.skipIf(!hasLiveSupabase)("Story 1 — Auth & tenancy", () => {
       email,
       password: "Test-Passw0rd!"
     });
+    // Unique name for the doomed second attempt, so the orphan check is immune to
+    // tenants created concurrently by other test files (no global row count).
+    const secondLabName = `Second Lab ${Math.random().toString(36).slice(2)}`;
     try {
-      const { count: before } = await admin
-        .from("tenants")
-        .select("id", { count: "exact", head: true });
       await expect(
         provisionSignup({
-          labName: "Second Lab",
+          labName: secondLabName,
           adminName: "Second Owner",
           email,
           password: "Test-Passw0rd!"
         })
       ).rejects.toBeInstanceOf(SignupError);
-      const { count: after } = await admin
+      const { count: orphans } = await admin
         .from("tenants")
-        .select("id", { count: "exact", head: true });
-      expect(after).toBe(before); // failed signup rolled back its tenant
+        .select("id", { count: "exact", head: true })
+        .eq("name", secondLabName);
+      expect(orphans ?? 0).toBe(0); // failed signup rolled back its tenant
     } finally {
       await admin.from("tenants").delete().eq("id", first.tenantId);
       await admin.auth.admin.deleteUser(first.userId);
