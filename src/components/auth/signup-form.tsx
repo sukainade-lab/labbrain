@@ -25,7 +25,8 @@ export function SignupForm({ token }: { token?: string }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          labName: isInvite ? "—" : labName,
+          // Invited users join an existing tenant — no lab name is collected.
+          ...(isInvite ? {} : { labName }),
           adminName,
           email,
           password,

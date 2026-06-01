@@ -4,13 +4,26 @@ import { z } from "zod";
 export const PLAN_SEAT_LIMITS = { starter: 5, pro: 20 } as const;
 export type PlanTier = keyof typeof PLAN_SEAT_LIMITS;
 
-export const signupSchema = z.object({
-  labName: z.string().trim().min(2, "اسم المختبر مطلوب"),
-  adminName: z.string().trim().min(2, "الاسم الكامل مطلوب"),
-  email: z.string().trim().email("البريد الإلكتروني غير صالح"),
-  password: z.string().min(8, "كلمة المرور 8 أحرف على الأقل"),
-  inviteToken: z.string().trim().min(1).optional()
-});
+export const signupSchema = z
+  .object({
+    // Optional at the field level: invited users join an existing tenant and
+    // never supply a lab name (the field is hidden in the invite UI). The refine
+    // below makes it required only for the new-lab (non-invite) path.
+    labName: z.string().trim().optional(),
+    adminName: z.string().trim().min(2, "الاسم الكامل مطلوب"),
+    email: z.string().trim().email("البريد الإلكتروني غير صالح"),
+    password: z.string().min(8, "كلمة المرور 8 أحرف على الأقل"),
+    inviteToken: z.string().trim().min(1).optional()
+  })
+  .superRefine((val, ctx) => {
+    if (!val.inviteToken && (val.labName ?? "").length < 2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["labName"],
+        message: "اسم المختبر مطلوب"
+      });
+    }
+  });
 export type SignupInput = z.infer<typeof signupSchema>;
 
 export const loginSchema = z.object({

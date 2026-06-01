@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { provisionSignup, SignupError } from "@/lib/auth/provision";
 import { safeNext } from "@/lib/auth/redirect";
 import { attemptLogin, mapAuthError } from "@/lib/auth/login";
-import { loginSchema, forgotSchema } from "@/lib/validation/auth";
+import { loginSchema, forgotSchema, signupSchema } from "@/lib/validation/auth";
 import { createInvitation, getSeatUsage } from "@/lib/auth/invitations";
 
 // Story 1 — Authentication, tenancy & team management.
@@ -306,6 +306,38 @@ describe("Story 1 — auth input validation (AC-1.5)", () => {
     expect(mapAuthError("Invalid login credentials")).toContain("غير صحيحة");
     expect(mapAuthError("Email not confirmed")).toContain("تأكيد");
     expect(mapAuthError("something weird")).toBeTruthy();
+  });
+
+  // Regression: invite-mode signup carries no lab name (field hidden in UI), so
+  // the schema must accept a missing labName when inviteToken is present, but
+  // still require it for the new-lab path (AC-1.1 / AC-1.4).
+  it("@AC-1.4 signup schema accepts an invite with no lab name", () => {
+    expect(
+      signupSchema.safeParse({
+        adminName: "Invited Member",
+        email: "invitee@lab.jo",
+        password: "supersecret",
+        inviteToken: "abc123"
+      }).success
+    ).toBe(true);
+  });
+
+  it("@AC-1.1 signup schema requires a lab name for a new lab (no invite)", () => {
+    expect(
+      signupSchema.safeParse({
+        adminName: "Owner",
+        email: "owner@lab.jo",
+        password: "supersecret"
+      }).success
+    ).toBe(false);
+    expect(
+      signupSchema.safeParse({
+        labName: "Jordan Calibration Lab",
+        adminName: "Owner",
+        email: "owner@lab.jo",
+        password: "supersecret"
+      }).success
+    ).toBe(true);
   });
 });
 

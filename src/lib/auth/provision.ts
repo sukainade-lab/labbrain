@@ -44,20 +44,29 @@ export async function provisionSignup(input: SignupInput): Promise<SignupResult>
   if (input.inviteToken) {
     const { data: invite } = await admin
       .from("invitations")
-      .select("id, tenant_id, role, accepted_at")
+      .select("id, tenant_id, role, email, accepted_at")
       .eq("token", input.inviteToken)
       .maybeSingle();
     if (!invite || invite.accepted_at) {
       throw new SignupError("invalid_invite", "رابط الدعوة غير صالح أو مستخدم");
+    }
+    // Bind acceptance to the invited address — a leaked token can't be used to
+    // join under a different email (defense in depth; tokens are single-use too).
+    if (invite.email.toLowerCase() !== input.email.toLowerCase()) {
+      throw new SignupError("invalid_invite", "هذه الدعوة لبريد إلكتروني مختلف");
     }
     await assertSeatAvailable(admin, invite.tenant_id);
     tenantId = invite.tenant_id;
     role = invite.role as SignupResult["role"];
     invitationId = invite.id;
   } else {
+    const labName = input.labName?.trim();
+    if (!labName || labName.length < 2) {
+      throw new SignupError("unknown", "اسم المختبر مطلوب");
+    }
     const { data: tenant, error: tErr } = await admin
       .from("tenants")
-      .insert({ name: input.labName })
+      .insert({ name: labName })
       .select("id")
       .single();
     if (tErr || !tenant) throw new SignupError("unknown", "تعذّر إنشاء المختبر");
