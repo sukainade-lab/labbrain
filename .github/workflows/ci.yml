@@ -73,7 +73,12 @@ jobs:
       - name: Live integration tests (serialized — shared DB)
         # --no-file-parallelism: all live suites share one Supabase instance, so
         # parallel files would race on seed/cleanup (Lesson L2).
-        run: npm run test -- --no-file-parallelism
+        # --retry=2: the shared Supabase/Kong gateway intermittently returns a
+        # transient 502 ("invalid response from upstream") on an otherwise-passing
+        # query, gating ship via retro P1. Vitest re-runs only the failed test up to
+        # twice; a real regression still fails all 3 attempts. Root-cause Kong
+        # health-wait kept as backlog if flakes persist past this mitigation.
+        run: npm run test -- --no-file-parallelism --retry=2
 
       - name: Stop Supabase
         if: always()
