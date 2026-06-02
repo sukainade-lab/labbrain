@@ -152,6 +152,22 @@ describe.skipIf(!hasLiveSupabase)("Story 6 — Tap activation (live)", () => {
     expect(rows).toHaveLength(1);
   });
 
+  it("@AC-6.3 redelivering the same activation emails the owner exactly ONCE (no duplicate notify)", async () => {
+    const { tenantId } = await seedTenant();
+    const chargeId = `chg_${Math.random().toString(36).slice(2)}`;
+    const outcome = tapActivate({ tenantId, chargeId, plan: "pro", interval: "year" });
+
+    await applyOutcome(admin, outcome); // first delivery → real activation
+    await applyOutcome(admin, outcome); // provider redelivery → already active
+    await applyOutcome(admin, outcome); // and again
+
+    // Subscription/access stay idempotent, AND the welcome email fires only on the
+    // single state transition — not on every webhook retry.
+    expect(sendActivationEmail).toHaveBeenCalledTimes(1);
+    const { data: tenant } = await admin.from("tenants").select("status").eq("id", tenantId).single();
+    expect(tenant!.status).toBe("active");
+  });
+
   it("@AC-6.4 a Tap charge id never collides with the same id on the Stripe rail", async () => {
     // (provider, provider_subscription_id) is the uniqueness key from migration 0008
     // — the same raw id under two providers is two distinct rows, never a conflicting

@@ -27,7 +27,10 @@ export interface MigrationRecord {
 export interface MigrationStore {
   get(tenantId: string): Promise<MigrationRecord | null>;
   upsert(record: MigrationRecord): Promise<void>;
-  setDataRegion(tenantId: string, region: string): Promise<void>;
+  // ATOMIC cutover: flip tenants.data_region AND mark the run 'cutover' in a single
+  // transaction. Split writes risk a "region flipped but status still verified" gap
+  // that would let a retried cutover re-run / re-import (see migration 0015).
+  commitCutover(record: MigrationRecord, region: string): Promise<void>;
 }
 
 export interface RunDeps {
@@ -124,9 +127,11 @@ export async function cutoverMigration(
     throw new MigrationError("not_verified", "migration must pass verification before cutover");
   }
 
-  await deps.store.setDataRegion(opts.tenantId, rec.targetRegion);
   const done: MigrationRecord = { ...rec, status: "cutover" };
-  await deps.store.upsert(done);
+  // Single atomic write: residency flip + 'cutover' run-log state together, so a
+  // crash can't leave the tenant pointed at the new region while the log still
+  // reads 'verified' (which would let this cutover be re-run / re-imported).
+  await deps.store.commitCutover(done, rec.targetRegion);
   return done;
 }
 
@@ -183,8 +188,16 @@ export function createSupabaseStore(admin: SupabaseClient): MigrationStore {
         : await admin.from("tenant_migrations").insert(payload);
       if (error) throw error;
     },
-    async setDataRegion(tenantId, region) {
-      const { error } = await admin.from("tenants").update({ data_region: region }).eq("id", tenantId);
+    async commitCutover(record, region) {
+      // One transaction (migration 0015): flips tenants.data_region AND sets the
+      // run-log row to 'cutover'/finished_at together. record.id is always present
+      // here — cutoverMigration reads the row (with its id) before committing.
+      if (!record.id) throw new Error("commitCutover requires a persisted migration id");
+      const { error } = await admin.rpc("cutover_tenant_migration", {
+        p_migration_id: record.id,
+        p_tenant_id: record.tenantId,
+        p_region: region
+      });
       if (error) throw error;
     }
   };
