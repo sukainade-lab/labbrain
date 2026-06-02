@@ -33,6 +33,15 @@ The 14 migrations (`0001_init` … `0014_document_versioning`) have only ever ru
 sequence for the first time. Prove they apply cleanly against a throwaway target before
 touching the real project.
 
+> **Pre-flight (2026-06-02):** the full `0001→0014` sequence was replayed from scratch
+> on a fresh local Supabase (`supabase db reset`) and **applied cleanly with zero
+> errors**. The Phase-1 invariants below were verified live against that fresh DB:
+> pgvector `0.8.2`, `chunks_embedding_idx = hnsw`, RLS enabled on all tenant tables with
+> the named policies listed, `branding` bucket public, `replace_document_chunks`
+> `security definer` + `service_role` EXECUTE. This is local evidence the **sequence**
+> is sound — you must still run the steps below against your throwaway cloud target to
+> catch anything environment-specific (extensions, `get_advisors` lints).
+
 - [ ] Create a **temporary** Supabase project (or a `supabase branch`) in **Frankfurt
   (EU)** — not the one you'll keep.
 - [ ] From a trusted machine:
@@ -41,9 +50,18 @@ touching the real project.
   supabase db push           # applies supabase/migrations/0001..0014 in order
   ```
 - [ ] Confirm: zero errors; `pgvector` extension present; the HNSW index on
-  `document_chunks` exists; every multi-tenant table has its **named** RLS policy
-  (`tenant_isolation_*`); the `branding` storage bucket exists (0013); the
-  `replace_document_chunks` RPC exists with `security definer` + `service_role` grant (0014).
+  `document_chunks` exists (`chunks_embedding_idx` — note 0001 bootstraps it as
+  `ivfflat`, then 0003 **drops and recreates it as `hnsw`**; the end state is HNSW,
+  so an `ivfflat` NOTICE mid-replay is expected); RLS is **enabled on every
+  multi-tenant table** with a named policy. The policy names follow two patterns:
+  tenant-scoped tables use **`<table>_tenant_isolation`** (e.g.
+  `documents_tenant_isolation`, `chunks_tenant_isolation`, `queries_tenant_isolation`,
+  `invitations_tenant_isolation`, `audit_exports_tenant_isolation`,
+  `tenant_migrations_tenant_isolation`); `tenants`/`users`/`subscriptions` use scoped
+  names instead (`tenants_select_own` + `tenants_update_own`, `users_select_same_tenant`
+  + `users_insert_self`, `subscriptions_select_own`). The `branding` storage bucket
+  exists (0013); the `replace_document_chunks` RPC exists with `security definer` +
+  `service_role` grant (0014).
 - [ ] Run `get_advisors` (security + performance lints) → resolve any **error**-level
   finding before prod. Note warnings.
 - [ ] **Delete the throwaway project/branch.** Its only job was to prove the sequence.
