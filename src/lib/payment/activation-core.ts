@@ -16,15 +16,22 @@ export async function applyOutcome(admin: Admin, outcome: WebhookOutcome): Promi
   switch (outcome.kind) {
     case "ignore":
       return;
-    case "activate":
-      // 1) Activate the tenant (access gate) + record the chosen plan.
-      await activateTenant(admin, outcome.tenantId, outcome.plan);
+    case "activate": {
+      // 1) Activate the tenant (access gate) + record the chosen plan. Returns
+      //    whether THIS call actually flipped the tenant into 'active' (vs it
+      //    already being active) so we don't re-notify on webhook redelivery.
+      const transitioned = await activateTenant(admin, outcome.tenantId, outcome.plan);
       // 2) Idempotent upsert of the subscription row (only when the provider gave
       //    us a subscription id to key on — a bare activation still flips access).
       if (outcome.record) await recordSubscription(admin, outcome.record);
-      // 3) Activation email to the lab owner (best-effort within the handler).
-      await sendActivation(admin, outcome.tenantId);
+      // 3) Activation email to the lab owner — ONLY on a real activation. Providers
+      //    retry deliveries (and the route 500s→retries on any later error), so
+      //    sending unconditionally would spam the owner with duplicate "you're
+      //    active" emails on every redelivery. Gating on the state transition keeps
+      //    the whole outcome idempotent end-to-end (best-effort within the handler).
+      if (transitioned) await sendActivation(admin, outcome.tenantId);
       return;
+    }
     case "deactivate":
       await deactivate(admin, outcome.provider, outcome.providerSubscriptionId);
       return;
@@ -34,8 +41,23 @@ export async function applyOutcome(admin: Admin, outcome: WebhookOutcome): Promi
   }
 }
 
-async function activateTenant(admin: Admin, tenantId: string, plan: string | null) {
-  await update(admin, "tenants", { plan: plan ?? undefined, status: "active" }, "id", tenantId);
+// Flip the tenant to 'active' and return TRUE iff this call performed the
+// transition (i.e. the tenant was not already active). The conditional update
+// (`status != 'active'`) is the dedup primitive: on webhook redelivery the row is
+// already active, so zero rows match and we report no transition — and because the
+// flip is a single atomic UPDATE, concurrent redeliveries can't both "win".
+async function activateTenant(admin: Admin, tenantId: string, plan: string | null): Promise<boolean> {
+  const { data, error } = await admin
+    .from("tenants")
+    .update({ plan: plan ?? undefined, status: "active" })
+    .eq("id", tenantId)
+    .neq("status", "active")
+    .select("id");
+  if (error) throw error;
+  const transitioned = (data?.length ?? 0) > 0;
+  // Already active: still keep the plan current (idempotent), but no transition.
+  if (!transitioned && plan) await update(admin, "tenants", { plan }, "id", tenantId);
+  return transitioned;
 }
 
 async function recordSubscription(admin: Admin, r: SubscriptionRecord) {

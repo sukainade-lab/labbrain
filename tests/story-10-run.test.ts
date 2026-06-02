@@ -76,8 +76,10 @@ function fakeStore(initial: MigrationRecord | null = null) {
     async upsert(r) {
       rec = r;
     },
-    async setDataRegion(_tenantId, r) {
-      region = r;
+    async commitCutover(r, reg) {
+      // Fake mirrors the live RPC: both effects land together (in-memory = atomic).
+      rec = r;
+      region = reg;
     }
   };
   return {

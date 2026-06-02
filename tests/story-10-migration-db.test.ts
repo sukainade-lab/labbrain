@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { createSourceReader } from "@/lib/migration/run";
+import { createSourceReader, createSupabaseStore, cutoverMigration } from "@/lib/migration/run";
 import { buildBundle } from "@/lib/migration/bundle";
 
 // S10 — LIVE migration suite. Two real guarantees against the local Supabase that
@@ -132,6 +132,53 @@ describe.skipIf(!hasLiveSupabase).sequential("Story 10 — migration (live)", ()
     // And Lab B's question text is absent from Lab A's export.
     const aQuestions = bundle.tables.queries.map((r) => String(r.question_text));
     expect(aQuestions.some((q) => q.includes("MigLabB"))).toBe(false);
+  });
+
+  it("@AC-10.5 cutover is atomic: data_region flip + status='cutover' land together (RPC)", async () => {
+    // Dedicated throwaway tenant (not labA/labB) so the seeded 'verified' run can't
+    // collide with the RLS test's inserts or the one-active partial unique index.
+    const { data: t, error: tErr } = await admin
+      .from("tenants")
+      .insert({ name: `Cutover-Lab-${uniq()}` })
+      .select()
+      .single();
+    if (tErr) throw tErr;
+    const cutTenant = t.id as string;
+
+    try {
+      const { error: insErr } = await admin.from("tenant_migrations").insert({
+        tenant_id: cutTenant,
+        started_by: "founder@labbrain.test",
+        status: "verified",
+        target_region: "ksa-me-central-1",
+        verification_hash: "h-cutover"
+      });
+      if (insErr) throw insErr;
+
+      // Drive the real cutover through the live service-role store. The single
+      // cutover_tenant_migration RPC (migration 0015) must flip BOTH the residency
+      // pointer and the run-log terminal state — proving they can't drift apart
+      // (the bug the RPC replaces did these as two separate, non-atomic writes).
+      const rec = await cutoverMigration({ store: createSupabaseStore(admin) }, { tenantId: cutTenant });
+      expect(rec.status).toBe("cutover");
+
+      const { data: tenant } = await admin
+        .from("tenants")
+        .select("data_region")
+        .eq("id", cutTenant)
+        .single();
+      expect(tenant!.data_region).toBe("ksa-me-central-1");
+
+      const { data: run } = await admin
+        .from("tenant_migrations")
+        .select("status, finished_at")
+        .eq("tenant_id", cutTenant)
+        .single();
+      expect(run!.status).toBe("cutover");
+      expect(run!.finished_at).not.toBeNull();
+    } finally {
+      await admin.from("tenants").delete().eq("id", cutTenant);
+    }
   });
 
   it("@AC-10.6 tenant_migrations RLS: a signed-in lab sees only its own run log", async () => {
