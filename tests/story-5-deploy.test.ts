@@ -40,6 +40,40 @@ describe("@AC-5.2 Contabo deploy via docker-compose", () => {
   });
 });
 
+describe("@AC-5.2 deploy hardening (pre-cutover audit)", () => {
+  it("a .dockerignore keeps secrets + cruft out of the build context", () => {
+    // The Dockerfile builder does `COPY . .`; without this the VPS .env would be
+    // baked into the builder image layer. Assert env files + heavy dirs excluded.
+    expect(existsSync(resolve(ROOT, ".dockerignore"))).toBe(true);
+    const di = read(".dockerignore");
+    expect(di).toMatch(/^\.env$/m);
+    expect(di).toMatch(/^\.env\.local$/m);
+    expect(di).toMatch(/^node_modules$/m);
+    expect(di).toMatch(/^\.git$/m);
+    expect(di).toMatch(/^\.next$/m);
+  });
+
+  it("compose pins a stable app image tag so rollback can reference it", () => {
+    expect(read("docker-compose.yml")).toMatch(/image:\s*labbrain-app:latest/);
+  });
+
+  it("deploy.sh uses a real previous-image rollback, not the non-existent `compose rollback`", () => {
+    const sh = read("deploy.sh");
+    // The old script called `docker compose rollback` — not a real subcommand.
+    expect(sh).not.toMatch(/docker compose rollback/);
+    // Real strategy: tag the running image before build, retag it back on failure.
+    expect(sh).toMatch(/labbrain-app:rollback/);
+    expect(sh).toMatch(/docker tag/);
+  });
+
+  it("deploy.sh refuses to ship until prod DB migrations are confirmed applied", () => {
+    const sh = read("deploy.sh");
+    // Supabase is hosted/external — migrations must be pushed before code deploys.
+    expect(sh).toMatch(/MIGRATIONS_APPLIED/);
+    expect(sh).toMatch(/supabase db push/);
+  });
+});
+
 describe("@AC-5.3 Caddy reverse proxy with auto-SSL", () => {
   it("has a Caddyfile that proxies the domain to the Next app on :3000", () => {
     expect(existsSync(resolve(ROOT, "Caddyfile"))).toBe(true);

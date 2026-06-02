@@ -1,0 +1,10 @@
+# LabBrain — line-ending policy.
+# Shell scripts and the Linux container configs MUST stay LF: a CRLF checkout on
+# the Contabo VPS would break the `#!/usr/bin/env bash` shebang and confuse
+# Docker/Caddy parsing. Pin them regardless of the cloning machine's autocrlf.
+*.sh            text eol=lf
+deploy.sh       text eol=lf
+Dockerfile      text eol=lf
+Caddyfile       text eol=lf
+docker-compose.yml text eol=lf
+.dockerignore   text eol=lf

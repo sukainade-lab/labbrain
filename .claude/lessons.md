@@ -60,6 +60,20 @@ from "each file is correct."
 **Effect on scoring:** Product hat capped at 8 for any story whose primary user flow has
 an orphaned step (a route/handler with no caller, or a CTA that doesn't reach it).
 
+### L5 — Wrap dynamic mixed-script values in `<bdi>` from first implementation (2026-06-02, retro S1–S5)
+**Trigger:** the UX hat scored 8 on first-pass `/5-eo-score` **twice** for the same
+root cause — dynamic, mixed Arabic/Latin content rendered without BiDi isolation:
+S2 document filenames (Arabic SOP names with embedded Latin/numbers mis-ordered) and
+S4 dashboard counters + plan badge (Latin plan names / digits mis-ordered inside the
+RTL flow). Each fix was mechanical (`<bdi>…</bdi>`) but cost a bridge round-trip.
+**Rule:** any value rendered into RTL layout that can contain Latin script, digits,
+or technical terms — filenames, plan names, counts, ISO clause numbers, units,
+accreditation-body names, user-entered text — must be wrapped in `<bdi>` (or carry
+`unicode-bidi: isolate`) the first time it's written, not retrofitted at review. Static
+Arabic labels don't need it; dynamic/user/data-derived strings do.
+**Effect on scoring:** UX hat capped at 8 for any story that renders dynamic
+mixed-script content into RTL without BiDi isolation.
+
 ## Archived lessons
 
 None.

@@ -48,14 +48,24 @@ export LABBRAIN_DOMAIN=app.labbrain.example   # the domain Caddy serves + SSLs
 docker compose up -d            # builds app, starts caddy; SSL auto-provisions
 ```
 
-### Subsequent deploys
+### Step 1 — apply DB migrations to prod (BEFORE deploying code)
+
+Supabase is hosted (Frankfurt), external to the compose stack, so `deploy.sh` does **not** migrate the database. Push migrations from a trusted machine first, otherwise code expecting a newer schema (e.g. `0007_rls_introspection`) breaks at runtime:
 
 ```bash
-# on the VPS, from the repo root
-./deploy.sh
+# from a machine with the Supabase CLI + the project's DB password
+supabase link --project-ref <your-project-ref>
+supabase db push            # applies supabase/migrations/* to the prod project
 ```
 
-`deploy.sh` pulls `main`, rebuilds the app image, rolls it with `--wait` (Caddy keeps serving the old container until the new one passes its healthcheck), reloads Caddy, then curls `/api/health` and rolls back on failure.
+### Step 2 — deploy the code
+
+```bash
+# on the VPS, from the repo root, after Step 1 is done
+MIGRATIONS_APPLIED=1 ./deploy.sh
+```
+
+`deploy.sh` refuses to run unless `MIGRATIONS_APPLIED=1` (a guard so code never ships ahead of the schema). It then: pulls `main`, **tags the running image** as `labbrain-app:rollback`, rebuilds, rolls the new container with `--wait` (Caddy keeps serving the old one until the new one is healthy), reloads Caddy, and probes `/api/health`. **On failure it retags the previous image and rolls back** so the lab is never left on a broken build.
 
 Caddy routes `LABBRAIN_DOMAIN` → Next.js on port 3000 with auto-renewing TLS. The container `HEALTHCHECK` and `deploy.sh` both probe the AC-5.1 health endpoint.
 
