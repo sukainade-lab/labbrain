@@ -12,6 +12,7 @@ interface DocRow {
   filename: string;
   status: "pending" | "parsing" | "indexing" | "ready" | "failed";
   page_count: number | null;
+  version: number;
   created_at: string;
 }
 
@@ -64,7 +65,11 @@ export default function DocumentsPage() {
       ? null
       : new URLSearchParams(window.location.search).get("doc")
   );
+  // Which document is mid-replace (S13). A single hidden input is reused per row:
+  // the clicked row's id is parked here, then the input fires a PUT to that id.
+  const [replacingId, setReplacingId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const replaceRef = useRef<HTMLInputElement>(null);
 
   // No synchronous setState here: the first await yields before any state
   // update, so the initial `loading` (true by default) covers the first load and
@@ -135,6 +140,28 @@ export default function DocumentsPage() {
     if (res.ok) setDocs((prev) => prev.filter((d) => d.id !== id));
   }
 
+  // S13 — replace a document's file in place. Same id, re-enters the pipeline the
+  // list already polls (parsing→indexing→ready); on success version bumps.
+  async function onReplace(id: string, file: File) {
+    setError(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch(`/api/documents/${id}`, { method: "PUT", body: form });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "تعذّر استبدال الوثيقة");
+        return;
+      }
+      await load(); // row flips to 'parsing'; the active-poll drives it to ready
+    } catch {
+      setError("تعذّر استبدال الوثيقة");
+    } finally {
+      setReplacingId(null);
+      if (replaceRef.current) replaceRef.current.value = "";
+    }
+  }
+
   const planLabel = PLAN_LABEL[plan] ?? plan;
   const usagePct = limit > 0 ? Math.round((docs.length / limit) * 100) : 0;
 
@@ -158,6 +185,18 @@ export default function DocumentsPage() {
           onChange={(e) => {
             const f = e.target.files?.[0];
             if (f) onUpload(f);
+          }}
+        />
+        {/* Shared hidden input for per-row replace: the row click parks its id in
+            replacingId, opens this picker, and onChange PUTs to that document. */}
+        <input
+          ref={replaceRef}
+          type="file"
+          accept={ACCEPT}
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f && replacingId) onReplace(replacingId, f);
           }}
         />
       </div>
@@ -207,11 +246,21 @@ export default function DocumentsPage() {
                     <bdi className="block truncate text-sm font-medium text-slate-100">
                       {doc.filename}
                     </bdi>
-                    <div className="mt-0.5 text-[11px] text-slate-400">
-                      {/* Ready docs always show their page count (matches the
-                          reference); pre-ready rows have no count yet. */}
-                      {doc.status === "ready" ? `${doc.page_count ?? 0} صفحة · ` : ""}
-                      {fmtDate(doc.created_at)}
+                    <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-400">
+                      <span>
+                        {/* Ready docs always show their page count (matches the
+                            reference); pre-ready rows have no count yet. */}
+                        {doc.status === "ready" ? `${doc.page_count ?? 0} صفحة · ` : ""}
+                        {fmtDate(doc.created_at)}
+                      </span>
+                      {/* Version badge once a doc has been replaced (AC-13.2). The
+                          Latin digit is <bdi>-isolated so it can't reorder in RTL
+                          (L5). version starts at 1 → badge only from نسخة 2 up. */}
+                      {doc.version > 1 && (
+                        <span className="rounded bg-[#1e3a5f] px-1.5 py-0.5 font-medium text-[#93c5fd]">
+                          نسخة <bdi>{doc.version}</bdi>
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -222,6 +271,21 @@ export default function DocumentsPage() {
                   >
                     {s.label}
                   </span>
+                  {/* Replace a revision in place (S13). Disabled while the doc is
+                      still moving through the pipeline so a second replace can't
+                      race the first. ≥44px tap target (L9). */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReplacingId(doc.id);
+                      replaceRef.current?.click();
+                    }}
+                    disabled={ACTIVE.includes(doc.status)}
+                    aria-label={`استبدال ${doc.filename}`}
+                    className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center px-1 text-slate-300 transition hover:text-[#fcd34d] disabled:opacity-40"
+                  >
+                    استبدال
+                  </button>
                   <button
                     type="button"
                     onClick={() => onDelete(doc.id)}

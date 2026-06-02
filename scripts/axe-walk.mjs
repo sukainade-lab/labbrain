@@ -69,7 +69,7 @@ function loadEnvLocal() {
 }
 
 // ---- config ------------------------------------------------------------------
-const DEFAULT_ROUTES = ["/dashboard", "/admin", "/founder", "/settings"];
+const DEFAULT_ROUTES = ["/dashboard", "/documents", "/admin", "/founder", "/settings"];
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 const VIEWPORT = { width: 375, height: 812, deviceScaleFactor: 2, isMobile: true };
 const PASSWORD = "Axe-Walk-Passw0rd!";
