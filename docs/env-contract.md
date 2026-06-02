@@ -29,6 +29,7 @@ Copy `.env.example` → `.env.local` and fill. Never commit `.env.local`.
 | `UNIFONIC_SENDER_ID` | unifonic.com → console → SenderIDs | Approved alphanumeric sender name (e.g. `LabBrain`) shown on the OTP SMS |
 | `MFA_COOKIE_SECRET` | You (`openssl rand -base64 32`) | **Server-only.** One HMAC key for BOTH the OTP code hash AND the `lb_mfa` elevation cookie (S7). Min 32 bytes. Rotating it invalidates live OTP challenges + elevation cookies |
 | `PLATFORM_ADMIN_EMAILS` | You | **Server-only.** Comma-separated email allowlist — the *entire* gate for the `/founder` super-admin panel (S8/AC-8.1). There is no platform-admin DB role; an email here can pause/activate any lab and read cross-tenant usage. Keep tight; match the founder's sign-in address |
+| `PUPPETEER_EXECUTABLE_PATH` | The runtime image (Contabo Docker) | **Server-only.** Absolute path to the system Chromium that `puppeteer-core` drives to render the audit-log PDF (S9/AC-9.4), e.g. `/usr/bin/chromium`. `CHROMIUM_PATH` is an accepted alias. Unset in CI/local — the render seam is mocked there. Unset in prod → `GET /api/audit/export` 500s with a clear message |
 | `NEXT_PUBLIC_SENTRY_DSN` | sentry.io → Project → Client Keys (DSN) | Error monitoring |
 | `NEXT_PUBLIC_POSTHOG_KEY` | posthog.com → Project Settings | Product analytics |
 | `NEXT_PUBLIC_POSTHOG_HOST` | posthog.com | e.g. `https://eu.posthog.com` (EU for residency) |
