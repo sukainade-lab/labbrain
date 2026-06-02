@@ -43,7 +43,7 @@ afterEach(() => {
   for (const k of AIRGAP_KEYS) delete process.env[k];
 });
 
-describe("getInferenceMode (AC-11.1)", () => {
+describe("getInferenceMode @AC-11.1", () => {
   it("defaults to cloud when unset or empty", () => {
     expect(getInferenceMode({})).toBe("cloud");
     expect(getInferenceMode({ INFERENCE_MODE: "" })).toBe("cloud");
@@ -69,7 +69,7 @@ describe("getInferenceMode (AC-11.1)", () => {
   });
 });
 
-describe("resolveOpenAiBackend — cloud (AC-11.1)", () => {
+describe("resolveOpenAiBackend — cloud @AC-11.1", () => {
   it("embed → OpenAI default base + cloud model + OPENAI_API_KEY", () => {
     const b = resolveOpenAiBackend("embed", { OPENAI_API_KEY: "sk-test" });
     expect(b.baseURL).toBeUndefined(); // SDK default = api.openai.com
@@ -88,7 +88,7 @@ describe("resolveOpenAiBackend — cloud (AC-11.1)", () => {
   });
 });
 
-describe("resolveOpenAiBackend — airgap (AC-11.2/11.3/11.5)", () => {
+describe("resolveOpenAiBackend — airgap @AC-11.2 @AC-11.3 @AC-11.5", () => {
   it("embed → Ollama local base + local embed model, never api.openai.com", () => {
     const b = resolveOpenAiBackend("embed", airgapEnv());
     expect(b.baseURL).toBe("http://localhost:11434/v1");
@@ -116,7 +116,7 @@ describe("resolveOpenAiBackend — airgap (AC-11.2/11.3/11.5)", () => {
   });
 });
 
-describe("resolveParseBackend (AC-11.4)", () => {
+describe("resolveParseBackend @AC-11.4", () => {
   it("cloud → LlamaParse cloud base by default", () => {
     expect(resolveParseBackend({}).baseURL).toBe(LLAMAPARSE_CLOUD_BASE);
   });
@@ -139,7 +139,7 @@ describe("resolveParseBackend (AC-11.4)", () => {
   });
 });
 
-describe("assertAirgapConfig — embedding-dimension safety (AC-11.5/11.6)", () => {
+describe("assertAirgapConfig — embedding-dimension safety @AC-11.5 @AC-11.6", () => {
   it("passes a complete, dimension-matched air-gap config", () => {
     expect(() => assertAirgapConfig(airgapEnv())).not.toThrow();
   });
@@ -169,7 +169,7 @@ describe("assertAirgapConfig — embedding-dimension safety (AC-11.5/11.6)", () 
   });
 });
 
-describe("constants are the single source of truth (drift guard, AC-11.6)", () => {
+describe("constants are the single source of truth (drift guard) @AC-11.6", () => {
   it("the pgvector column dimension is 1536", () => {
     expect(EMBEDDING_DIM).toBe(1536);
   });
@@ -180,7 +180,7 @@ describe("constants are the single source of truth (drift guard, AC-11.6)", () =
 // throw: a misconfigured panel still has to render something honest rather than
 // crash the founder page. It reports what is configured; the resolvers remain the
 // enforcement boundary at request time.
-describe("describeInferenceMode (AC-11.8)", () => {
+describe("describeInferenceMode @AC-11.8", () => {
   it("cloud → labels the cloud backend + real model names + cloud parse host", () => {
     const v = describeInferenceMode({ OPENAI_API_KEY: "sk-x" });
     expect(v.mode).toBe("cloud");

@@ -66,7 +66,7 @@ afterEach(() => {
 });
 
 describe("embedTexts under air-gap (AC-11.2)", () => {
-  it("targets the local Ollama base + local model, never api.openai.com", async () => {
+  it("@AC-11.2 targets the local Ollama base + local model, never api.openai.com", async () => {
     setAirgap();
     embeddingsCreate.mockResolvedValue({
       data: [
@@ -87,7 +87,7 @@ describe("embedTexts under air-gap (AC-11.2)", () => {
     expect(out).toEqual([[0.1], [0.2]]);
   });
 
-  it("FAIL-CLOSED: missing OLLAMA_BASE_URL throws before any client is built", async () => {
+  it("@AC-11.2 @AC-11.5 FAIL-CLOSED: missing OLLAMA_BASE_URL throws before any client is built", async () => {
     setAirgap({ OLLAMA_BASE_URL: undefined });
     await expect(embedTexts(["a"])).rejects.toThrow(/OLLAMA_BASE_URL/);
     expect(created).toHaveLength(0);
@@ -96,7 +96,7 @@ describe("embedTexts under air-gap (AC-11.2)", () => {
 });
 
 describe("generateAnswer under air-gap (AC-11.3)", () => {
-  it("targets the local base + model, with the grounding contract unchanged", async () => {
+  it("@AC-11.3 targets the local base + model, with the grounding contract unchanged", async () => {
     setAirgap();
     chatCreate.mockResolvedValue({ choices: [{ message: { content: " الجواب " } }] });
 
@@ -121,7 +121,7 @@ describe("generateAnswer under air-gap (AC-11.3)", () => {
     expect(call.messages[0].role).toBe("system"); // system prompt still present
   });
 
-  it("FAIL-CLOSED: missing AIRGAP_ANSWER_MODEL throws, no cloud call", async () => {
+  it("@AC-11.3 @AC-11.5 FAIL-CLOSED: missing AIRGAP_ANSWER_MODEL throws, no cloud call", async () => {
     setAirgap({ AIRGAP_ANSWER_MODEL: undefined });
     await expect(
       generateAnswer({ question: "q", chunks: [{} as never], lang: "en" })
@@ -131,7 +131,7 @@ describe("generateAnswer under air-gap (AC-11.3)", () => {
 });
 
 describe("parseDocument under air-gap (AC-11.4)", () => {
-  it("uploads + polls the self-hosted base, never the cloud LlamaParse host", async () => {
+  it("@AC-11.4 uploads + polls the self-hosted base, never the cloud LlamaParse host", async () => {
     setAirgap();
     const urls: string[] = [];
     const fetchImpl = vi.fn(async (url: string) => {
@@ -162,7 +162,7 @@ describe("parseDocument under air-gap (AC-11.4)", () => {
     }
   });
 
-  it("FAIL-CLOSED: airgap missing LLAMAPARSE_BASE_URL throws before any fetch", async () => {
+  it("@AC-11.4 @AC-11.5 FAIL-CLOSED: airgap missing LLAMAPARSE_BASE_URL throws before any fetch", async () => {
     setAirgap({ LLAMAPARSE_BASE_URL: undefined });
     const fetchImpl = vi.fn();
     await expect(
@@ -175,7 +175,7 @@ describe("parseDocument under air-gap (AC-11.4)", () => {
 });
 
 describe("cloud mode is unchanged (AC-11.1)", () => {
-  it("embed resolves the OpenAI default base (undefined) with the cloud key", async () => {
+  it("@AC-11.1 embed resolves the OpenAI default base (undefined) with the cloud key", async () => {
     process.env.OPENAI_API_KEY = "sk-cloud";
     embeddingsCreate.mockResolvedValue({ data: [{ index: 0, embedding: [0.5] }] });
     await embedTexts(["a"]);
