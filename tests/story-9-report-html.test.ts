@@ -90,6 +90,18 @@ describe("Story 9 — entry fidelity (@AC-9.2)", () => {
     expect(html).toContain("<bdi>15/02/2026 13:30</bdi>");
   });
 
+  it("bidi-isolates a mixed-script lab name in the header (L5)", () => {
+    // A Latin/mixed lab name sits beside Arabic + an em dash in the RTL <h1>;
+    // without <bdi> it reorders. The header lab name is the most prominent
+    // mixed-script value, so it must be isolated like every other.
+    const html = buildAuditReportHtml({
+      ...baseReport,
+      labName: "MetroLab مترو",
+      entries: [entry()]
+    });
+    expect(html).toContain("<bdi>MetroLab مترو</bdi>");
+  });
+
   it("escapes HTML in user-derived text (no raw injection)", () => {
     const html = buildAuditReportHtml({
       ...baseReport,

@@ -110,7 +110,7 @@ describe("Story 9 — /api/audit/export route handler", () => {
     expect(getAuditLog).not.toHaveBeenCalled();
   });
 
-  it("@AC-9.1 @AC-9.5 owner → 200 PDF with attachment headers, export logged", async () => {
+  it("@AC-9.1 @AC-9.5 @AC-9.6 owner → 200 PDF with attachment headers, export logged", async () => {
     h.state.user = { id: "u1" };
     h.state.me = { tenant_id: "t1", role: "owner", email: "owner@lab.jo" };
     h.state.tenant = { name: "Lab Amman" };
@@ -152,7 +152,7 @@ describe("Story 9 — /api/audit/export route handler", () => {
     expect(res.status).toBe(200);
   });
 
-  it("@AC-9.4 an empty log → still a 200 PDF (not an error), logged with row_count 0", async () => {
+  it("@AC-9.4 @AC-9.6 an empty log → still a 200 PDF (not an error), logged with row_count 0", async () => {
     h.state.user = { id: "u1" };
     h.state.me = { tenant_id: "t1", role: "owner", email: "owner@lab.jo" };
     h.state.tenant = { name: "Lab Amman" };

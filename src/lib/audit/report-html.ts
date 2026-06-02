@@ -123,7 +123,7 @@ export function buildAuditReportHtml(input: AuditReportInput): string {
 </head>
 <body>
 <header class="report-head">
-  <h1>سجل الأسئلة والأجوبة — ${esc(input.labName)}</h1>
+  <h1>سجل الأسئلة والأجوبة — ${bidi(input.labName)}</h1>
   <div class="head-row">
     <span>النطاق: ${esc(input.rangeLabel)}</span>
     <span>تم التصدير بواسطة: ${bidi(input.exportedBy)}</span>
