@@ -12,6 +12,12 @@ Copy `.env.example` → `.env.local` and fill. Never commit `.env.local`.
 | `OPENAI_API_KEY` | platform.openai.com → API keys | GPT-4o-mini default, GPT-4o complex |
 | `ANTHROPIC_API_KEY` | console.anthropic.com → API keys | Fallback + Arabic quality check |
 | `LLAMAPARSE_API_KEY` | cloud.llamaindex.ai | PDF/DOCX/XLSX parsing with page numbers |
+| `INFERENCE_MODE` | You (deploy config) | Not a secret. Unset/`cloud` (default) = OpenAI + cloud LlamaParse. `airgap` = on-prem only; makes the 5 vars below required and the resolver **fail closed** (S11/AC-11.1). A typo throws — no third mode |
+| `OLLAMA_BASE_URL` | The on-host Ollama server (airgap only) | OpenAI-compatible `/v1` base, reused by the embed + answer seams (S11/AC-11.2/11.3). Required when `INFERENCE_MODE=airgap` |
+| `AIRGAP_EMBEDDING_MODEL` | The on-host Ollama model registry (airgap only) | Local embedding model. MUST emit vectors of the pgvector column dimension (S11/AC-11.2/11.6) |
+| `AIRGAP_EMBEDDING_DIM` | You (airgap only) | The local model's vector dimension. Validated at startup to equal the pgvector column (1536) — a mismatch throws, so a wrong model can't corrupt the index (S11/AC-11.6) |
+| `AIRGAP_ANSWER_MODEL` | The on-host Ollama model registry (airgap only) | Local chat/answer model (S11/AC-11.3) |
+| `LLAMAPARSE_BASE_URL` | cloud.llamaindex.ai (override) **or** the on-prem LlamaParse instance | **Cloud:** OPTIONAL override of the hosted LlamaParse base. **Airgap:** REQUIRED — points at the self-hosted instance so document bytes never leave the host (S11/AC-11.4) |
 | `RESEND_API_KEY` | resend.com → API keys | Transactional email |
 | `RESEND_FROM_EMAIL` | You | Verified sender domain in Resend |
 | `STRIPE_SECRET_KEY` | dashboard.stripe.com → Developers → API keys | `sk_test_…` in dev |
@@ -48,3 +54,18 @@ As of S6 both rails are wired behind one `PaymentProvider` interface, selected a
 - **Stripe** — every other currency (the S4 contract, unchanged). A checkout POST with no `currency` still routes to Stripe, so the shipped loop is untouched.
 
 The live default is JOD → Tap. Stripe stays fully configured as the international rail and as the documented fallback if Tap (or Stripe) onboarding is rejected.
+
+## Air-gap mode (S11 — on-prem deployment)
+
+A lab that cannot let any document leave its premises deploys with `INFERENCE_MODE=airgap`. This is a **deploy-time** switch, set once in the host's environment (the Contabo/on-prem `.env` or compose env block) — never per request, never per tenant.
+
+What changes when `INFERENCE_MODE=airgap`:
+
+- **Embeddings + answers** route to a local **Ollama** server via its OpenAI-compatible API (`OLLAMA_BASE_URL`). The existing `openai` SDK is reused verbatim with only a `baseURL` swap — **no new dependency**. `OPENAI_API_KEY` is not consulted.
+- **Document parsing** routes to a **self-hosted LlamaParse** (`LLAMAPARSE_BASE_URL`) instead of the cloud API.
+- **Fail-closed contract (AC-11.5):** if any of `OLLAMA_BASE_URL`, `AIRGAP_EMBEDDING_MODEL`, `AIRGAP_EMBEDDING_DIM`, `AIRGAP_ANSWER_MODEL`, `LLAMAPARSE_BASE_URL` is missing — or `AIRGAP_EMBEDDING_DIM` ≠ the pgvector column (1536), or `INFERENCE_MODE` is a typo — the resolver **throws** before any request is built. There is no silent cloud fallback: a classified document can never be routed off-host by misconfiguration.
+- **Dimension safety (AC-11.6):** the local embedding model must produce 1536-dim vectors to match the existing column. Picking a model with a different dimension is caught at startup, not after a corrupt write.
+
+**Operator visibility (AC-11.8):** the live mode is surfaced read-only on both the **admin** page and the **founder** panel — mode (cloud / air-gap / invalid-config), the active embed + answer model names, and the parse host — so an operator can confirm at a glance that an air-gap box is actually running air-gapped.
+
+**No DB migration** is needed for air-gap mode. Running an actual local Ollama + self-hosted LlamaParse is a founder-gated deployment step (out of scope for the app code, which only resolves + validates the backend).

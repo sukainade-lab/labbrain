@@ -3,8 +3,10 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { PlatformStats, TenantOverviewRow } from "@/lib/founder/stats";
+import type { InferenceModeView } from "@/lib/ai/inference-mode";
 import { getPlan } from "@/lib/pricing/plans";
 import { migrationControl, regionLabel } from "@/lib/migration/view";
+import { InferenceModeBadge } from "@/components/ops/inference-mode-badge";
 
 // AC-8.2 / AC-8.3 / AC-8.4 / AC-8.5 — the founder panel UI. Receives the
 // already-fetched cross-tenant overview from the server page (one round-trip) and
@@ -44,11 +46,13 @@ function StatusPill({ status }: { status: string }) {
 export function FounderPanel({
   rows,
   stats,
-  founderEmail
+  founderEmail,
+  inferenceView
 }: {
   rows: TenantOverviewRow[];
   stats: PlatformStats;
   founderEmail: string;
+  inferenceView: InferenceModeView;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<"tenants" | "invoices" | "migration">("tenants");
@@ -154,6 +158,11 @@ export function FounderPanel({
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Inference-mode indicator (AC-11.8) */}
+        <div className="mb-7">
+          <InferenceModeBadge view={inferenceView} />
         </div>
 
         {/* Tabs */}

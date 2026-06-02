@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssRtl from "tailwindcss-rtl";
 
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
@@ -21,7 +22,7 @@ const config: Config = {
   },
   // tailwindcss-rtl enables ms-/me-/ps-/pe- logical-property utilities so the
   // same classes work in RTL (Arabic, default) and LTR (English) without flips.
-  plugins: [require("tailwindcss-rtl")]
+  plugins: [tailwindcssRtl]
 };
 
 export default config;
