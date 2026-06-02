@@ -10,7 +10,8 @@ const LINKS = [
   { href: "/dashboard", label: "لوحة التحكم" },
   { href: "/documents", label: "الوثائق" },
   { href: "/qa", label: "الأسئلة والأجوبة" },
-  { href: "/admin", label: "الإدارة" }
+  { href: "/admin", label: "الإدارة" },
+  { href: "/settings", label: "الإعدادات" }
 ];
 
 export function NavLinks() {

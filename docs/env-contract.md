@@ -25,6 +25,9 @@ Copy `.env.example` → `.env.local` and fill. Never commit `.env.local`.
 | `TAP_PRICE_{PLAN}_{INTERVAL}_{KWD\|SAR}` | You (founder price points) | KWD/SAR amounts in major units (e.g. `49.000`). 8 keys: STARTER/PRO × MONTH/YEAR × KWD/SAR. JOD is derived from `lib/pricing/plans` (not env). `amountFor` THROWS if a needed key is missing — no FX guessing (AC-6.5). |
 | `INVOICE_REQUEST_TO` | You | Founder/sales inbox that receives bank-transfer invoice requests (AC-4.2 fallback) |
 | `DEMO_VIDEO_URL` | You | Welcome-email demo link (AC-4.4); falls back to `${APP_URL}/demo` if unset |
+| `UNIFONIC_API_KEY` | unifonic.com → console → SMS app (AppSid) | **Server-only.** Authenticates every SMS API POST for 2FA OTPs (S7/AC-7.2) |
+| `UNIFONIC_SENDER_ID` | unifonic.com → console → SenderIDs | Approved alphanumeric sender name (e.g. `LabBrain`) shown on the OTP SMS |
+| `MFA_COOKIE_SECRET` | You (`openssl rand -base64 32`) | **Server-only.** One HMAC key for BOTH the OTP code hash AND the `lb_mfa` elevation cookie (S7). Min 32 bytes. Rotating it invalidates live OTP challenges + elevation cookies |
 | `NEXT_PUBLIC_SENTRY_DSN` | sentry.io → Project → Client Keys (DSN) | Error monitoring |
 | `NEXT_PUBLIC_POSTHOG_KEY` | posthog.com → Project Settings | Product analytics |
 | `NEXT_PUBLIC_POSTHOG_HOST` | posthog.com | e.g. `https://eu.posthog.com` (EU for residency) |

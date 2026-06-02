@@ -39,3 +39,20 @@ export const inviteSchema = z.object({
   email: z.string().trim().email("البريد الإلكتروني غير صالح"),
   role: z.enum(["admin", "member"]).default("member")
 });
+
+// ── S7 SMS 2FA ────────────────────────────────────────────────────────────────
+// The raw phone is validated/normalized by lib/auth/phone.ts (Jordan-specific), so
+// here we only require a non-empty string and let the route return the localized
+// "invalid number" message on a normalize miss.
+export const enrollSchema = z.object({
+  phone: z.string().trim().min(1, "رقم الهاتف مطلوب")
+});
+
+export const otpVerifySchema = z.object({
+  code: z.string().trim().regex(/^\d{6}$/, "الرمز يتكوّن من 6 أرقام"),
+  purpose: z.enum(["login", "enroll", "disable"])
+});
+
+export const otpSendSchema = z.object({
+  purpose: z.enum(["login", "enroll", "disable"]).default("login")
+});
