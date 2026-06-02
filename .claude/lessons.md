@@ -1,6 +1,6 @@
 # Lessons — LabBrain
 
-Last pruned: 2026-06-02 (Sprint 2 retro — 0 archived, 0 pruned; all lessons <90d)
+Last pruned: 2026-06-02 (Sprint 4 retro — 0 archived, 0 pruned; all lessons <90d). L8 added.
 
 ## Active lessons
 
@@ -103,6 +103,21 @@ tests are necessary but do not substitute for the observed walk.
 **Effect on scoring:** QA hat capped at 9 for any UI story with no cited manual 375px +
 axe-core verification. (Caps at 9, not 8 — an evidence/polish gap, less severe than L1's
 missing route coverage.)
+
+### L8 — Phase-2 backlog stories must enumerate their AC-N.N criteria before coding (2026-06-02, Sprint 4 retro; pattern S6 + S8)
+**Trigger:** S6 and S8 each lost a QA point for the same root cause — the BRD defines
+Phase-2 stories (S6–S16) as **one-line backlog items**, not enumerated `AC-N.N`
+acceptance criteria like S1–S5. AC traceability then rests on `@AC-N.N` **test-tag
+convention** with no BRD spec line to diff against: the scorer can confirm tags exist
+but cannot verify the scope is *complete*, because there's nothing checkable to compare
+the tags to. Structurally recurs for every remaining Phase-2 story (S9–S16).
+**Rule:** in `/2-eo-dev-plan` for any Phase-2 story, first write the story's `AC-N.N`
+acceptance criteria into the BRD (or a `docs/stories/SN.md` spec) as a checkable list,
+*then* code and tag against it. Every `@AC-N.N` test tag must trace to an enumerated
+criterion — the tags don't get to invent the scope.
+**Effect on scoring:** QA hat capped at 9 for any story whose ACs exist only as a
+backlog one-liner with no enumerated `AC-N.N` spec. (Caps at 9, not 8 — an evidence/
+spec-hygiene gap, sibling to L7.)
 
 ## Archived lessons
 
