@@ -20,7 +20,7 @@
 | Story | Title | Loop | Status |
 |-------|-------|------|--------|
 | S6 | Tap Payments card integration (JOD + KWD + SAR) | money | ✅ shipped 2026-06-02 · **composite 90** (P9 A9 E9 Q9 U9) · **PR #8 merged** (`8a80179`) — founder-authorized · AC-6.1…6.6 green · 6/6 ACs @AC-tagged · post-merge trunk gates green (tsc · 287/287 tests · `next build` · audit documented) · score `docs/qa-scores/2026-06-02-0214-S6-tap-payments.md` · live Contabo cutover deferred (founder-gated: VPS + secrets) |
-| S7 | SMS 2FA via Unifonic (Jordan numbers) | auth |
+| S7 | SMS 2FA via Unifonic (Jordan numbers) | auth | 📝 planned 2026-06-02 · ACs defined AC-7.1…7.6 · plan `docs/handovers/plan-S7-sms-2fa.md` · decisions: per-user opt-in + app-level signed-cookie gate · branch `feat/s7-sms-2fa` · ⚠️ verify Unifonic API contract before coding |
 | S8 | Founder super-admin panel | domain |
 | S9 | Audit export — Q&A log as PDF | domain |
 | S10 | KSA data migration → AWS me-central-1 (PDPL) | compliance |
@@ -49,7 +49,7 @@ Next options:
 Standing (surface, do not work around): **rotate the GitHub PAT** (pasted plaintext earlier — live/active for `sukainade-lab`); `.claude/settings.json` SessionStart hook still awaiting explicit approval.
 
 ---
-**Last updated:** 2026-06-02 · **Current sprint:** 2 / ~5 · **Last command:** `/8-eo-retro` — Sprint 2 retro → `docs/retros/2026-06-02-sprint2.md`. 3 PRs shipped (#6/#7/#8); S6 first-pass 88 → shipped 90. Self-improvement loop confirmed working: L4 held Product 9 (no orphaned money loop, unlike S4's 6) and L5 held UX 9 (`<bdi>` from first commit, unlike S2/S4's 8) — both chronic Sprint-1 regressions prevented on first pass. New lesson **L6** added (no real-looking secret prefixes in example/doc/test files; Engineering cap 8). Lessons now 6 active, 0 archived, 0 pruned. Next-sprint focus: process P1 (confirm CI green *before* `/5-eo-score`) to retire the recurring L3 procedural cap. Next: `/2-eo-dev-plan story-7` (SMS 2FA via Unifonic) or live Contabo cutover (founder-gated).
+**Last updated:** 2026-06-02 · **Current sprint:** 3 / ~5 · **Last command:** `/2-eo-dev-plan story-7` — S7 (SMS 2FA via Unifonic) planned → `docs/handovers/plan-S7-sms-2fa.md`. ACs defined AC-7.1…7.6. Founder decisions: **per-user opt-in** + **app-level signed-cookie gate** (not Supabase native AAL2). Approach: migration 0009 (`users.phone`/`mfa_enabled`/`phone_verified_at` + `mfa_challenges` table, named RLS); pure helpers (phone normalize, HMAC `lb_mfa` cookie, OTP gen/hash/compare); dependency-free Unifonic `fetch` sender; 4 routes `/api/auth/2fa/{enroll,send,verify,disable}`; middleware gate extension; RTL verify + settings UI. Lessons L1/L2/L4/L5/L6 apply; **retro P1 in force — confirm CI green before scoring this time.** ⚠️ Verify Unifonic API contract first (S6-style security gate). Branch `feat/s7-sms-2fa` to be cut off `main`. Phase = `ready-to-code`. Next: `/3-eo-code`.
 
 ## Retros
 - 2026-06-02 — `docs/retros/2026-06-02.md` (Sprint 1 / Weekend MVP S1–S5; 5 PRs shipped; first-pass avg composite 87.6, all bridged to 100; focus hat: UX — repeat `<bdi>` miss → L5; process proposals P1 CI-before-score, P2 ingester regex).
