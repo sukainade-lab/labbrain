@@ -1,8 +1,27 @@
 import { InviteForm } from "@/components/admin/invite-form";
+import { AuditExportForm } from "@/components/admin/audit-export-form";
+import { createClient } from "@/lib/supabase/server";
 
 // AC-4.3 — admin shell: subscription status + activation state per tenant.
 // AC-1.4 — team invitations (owner/admin only; enforced server-side).
-export default function AdminPage() {
+// AC-9.5 — audit-log PDF export trigger, owner/admin only (gate mirrors the
+// route's, so the control is only shown to a caller the route would accept).
+export default async function AdminPage() {
+  const supabase = await createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  let role: string | null = null;
+  if (user) {
+    const { data: me } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    role = me?.role ?? null;
+  }
+  const canExportAudit = role === "owner" || role === "admin";
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-slate-100">الإدارة</h1>
@@ -15,6 +34,17 @@ export default function AdminPage() {
         </p>
         <InviteForm />
       </section>
+
+      {canExportAudit && (
+        <section className="mt-8 rounded-xl border border-[#334155] bg-[#1B2A3D] p-6">
+          <h2 className="text-lg font-bold text-slate-100">سجل الأسئلة للتدقيق</h2>
+          <p className="mt-1 text-sm text-slate-400">
+            صدِّر سجل الأسئلة والأجوبة كملف PDF — دليل تدقيق لتقييم JISM، كل إجابة
+            موثّقة بمصدرها (اسم الوثيقة والصفحة).
+          </p>
+          <AuditExportForm />
+        </section>
+      )}
 
       <table className="mt-8 w-full text-right text-slate-300">
         <thead>

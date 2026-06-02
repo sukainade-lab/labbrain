@@ -24,6 +24,18 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
+# Audit-export PDF render (S9/AC-9.4): puppeteer-core drives the system Chromium —
+# only a headless browser resolves Arabic shaping + bidi correctly. Ship the
+# distro Chromium plus Noto Arabic/Latin fonts so the rendered PDF has glyphs
+# (alpine has none by default). PUPPETEER_EXECUTABLE_PATH is the contract the
+# render seam reads (CHROMIUM_PATH is an accepted alias); without it the route
+# 500s with a clear message instead of a blank document.
+RUN apk add --no-cache \
+  chromium \
+  font-noto \
+  font-noto-arabic
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
 # Run as non-root.
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs
