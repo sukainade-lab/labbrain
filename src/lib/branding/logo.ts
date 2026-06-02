@@ -83,3 +83,31 @@ export function publicLogoUrl(admin: Admin, logoPath: string | null | undefined)
   if (!logoPath) return null;
   return admin.storage.from(BRANDING_BUCKET).getPublicUrl(logoPath).data.publicUrl;
 }
+
+export interface SidebarBrand {
+  /** Logo URL to render, or null to render none. */
+  logoUrl: string | null;
+  /** Arabic alt for the logo <img> (AC-12.6). Falls back when name is empty. */
+  logoAlt: string;
+  /** Trimmed lab name to render <bdi>-wrapped, or null → show the wordmark (L5). */
+  labName: string | null;
+  /** True when neither logo-name nor name resolves → render the "LabBrain" wordmark. */
+  showWordmark: boolean;
+}
+
+// Pure resolver for the authenticated-shell sidebar branding (AC-12.4). Encodes the
+// fallback chain logo+name → name → "LabBrain" wordmark, and the Arabic alt format,
+// in one tested place so the layout JSX stays a thin render. Empty/whitespace names
+// collapse to null so a blank tenant name never renders an empty <bdi>.
+export function resolveSidebarBrand(
+  labName: string | null | undefined,
+  logoUrl: string | null | undefined
+): SidebarBrand {
+  const name = labName?.trim() || null;
+  return {
+    logoUrl: logoUrl ?? null,
+    logoAlt: name ? `شعار ${name}` : "شعار المختبر",
+    labName: name,
+    showWordmark: !name
+  };
+}

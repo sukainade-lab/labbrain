@@ -2,7 +2,7 @@ import { LogoutButton } from "@/components/layout/logout-button";
 import { NavLinks } from "@/components/layout/nav-links";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { publicLogoUrl } from "@/lib/branding/logo";
+import { publicLogoUrl, resolveSidebarBrand } from "@/lib/branding/logo";
 
 // Shell layout for authenticated app routes. Route protection is enforced in
 // proxy.ts (gates the (app) group behind a Supabase session).
@@ -33,31 +33,33 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         .select("name, logo_path")
         .eq("id", me.tenant_id)
         .single();
-      labName = tenant?.name?.trim() || null;
+      labName = tenant?.name ?? null;
       logoUrl = publicLogoUrl(admin, tenant?.logo_path ?? null);
     }
   }
+
+  const brand = resolveSidebarBrand(labName, logoUrl);
 
   return (
     <div className="flex min-h-screen">
       <aside className="flex w-56 flex-col border-l border-slate-800 bg-slate-900/40 p-6">
         <div className="flex items-center gap-2">
-          {logoUrl && (
+          {brand.logoUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={logoUrl}
-              alt={labName ? `شعار ${labName}` : "شعار المختبر"}
+              src={brand.logoUrl}
+              alt={brand.logoAlt}
               width={28}
               height={28}
               className="h-7 w-7 shrink-0 object-contain"
             />
           )}
-          {labName ? (
-            <bdi dir="auto" className="text-lg font-bold text-amber-500">
-              {labName}
-            </bdi>
-          ) : (
+          {brand.showWordmark ? (
             <span className="text-lg font-bold text-amber-500">LabBrain</span>
+          ) : (
+            <bdi dir="auto" className="text-lg font-bold text-amber-500">
+              {brand.labName}
+            </bdi>
           )}
         </div>
         <NavLinks />
