@@ -1,6 +1,6 @@
 # Lessons — LabBrain
 
-Last pruned: 2026-06-01
+Last pruned: 2026-06-02 (Sprint 2 retro — 0 archived, 0 pruned; all lessons <90d)
 
 ## Active lessons
 
@@ -87,6 +87,22 @@ real-looking secret **prefix** — `sk_live_`, `sk_test_`, `whsec_`, `pk_live_`,
 `<tap-secret-key>`, `whsec_REDACTED`). Real secrets live only in gitignored `.env.local`.
 **Effect on scoring:** Engineering hat capped at 8 for any story whose tracked files
 contain a literal secret prefix, even in documentation/comment context.
+
+### L7 — UI stories must cite a manual 375px + axe-core walk as verification evidence (2026-06-02, Sprint 3 retro; pattern S6 + S7)
+**Trigger:** QA scored 9 on first pass for **both** S6 and S7 — the *same* root cause
+each time: verification was automated/CI-only, with no manual 375px mobile walk and no
+axe-core accessibility pass cited as PR/score evidence. Both score reports listed
+"capture a manual 375px + axe walk" as a deferred gap. The automated suite proves logic
+and route behavior, but the MENA mobile + a11y promise (375px WhatsApp-demo viewport,
+RTL, ≥44px targets) is only ever asserted in code, never observed.
+**Rule:** any story that ships or changes UI must cite a manual verification walk in its
+PR / score evidence: (a) render at 375px and confirm layout + tap targets, (b) run
+axe-core (or equivalent) and record zero serious/critical violations. A screenshot or a
+one-line "375px + axe: clean" note in the PR satisfies it. Automated component/route
+tests are necessary but do not substitute for the observed walk.
+**Effect on scoring:** QA hat capped at 9 for any UI story with no cited manual 375px +
+axe-core verification. (Caps at 9, not 8 — an evidence/polish gap, less severe than L1's
+missing route coverage.)
 
 ## Archived lessons
 
