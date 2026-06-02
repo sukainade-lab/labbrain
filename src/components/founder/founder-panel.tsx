@@ -90,7 +90,7 @@ export function FounderPanel({
     <div className="min-h-screen bg-[#0F172A] text-slate-200">
       <header className="flex items-center justify-between border-b border-[#334155] bg-[#1B2A3D] px-6 py-3.5">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#D97706] text-sm font-bold text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#B45309] text-sm font-bold text-white">
             LB
           </div>
           <div className="flex items-baseline gap-2">
@@ -98,7 +98,7 @@ export function FounderPanel({
             <span className="text-xs text-slate-400">لوحة المؤسس</span>
           </div>
         </div>
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-slate-400">
           <bdi>{founderEmail}</bdi>
         </div>
       </header>
@@ -118,7 +118,7 @@ export function FounderPanel({
         <div className="mb-7 grid grid-cols-2 gap-3 lg:grid-cols-4" aria-busy={pending}>
           {cards.map((c) => (
             <div key={c.label} className="rounded-xl border border-[#334155] bg-[#1B2A3D] p-4">
-              <div className="mb-1.5 text-[11px] text-slate-500">{c.label}</div>
+              <div className="mb-1.5 text-[11px] text-slate-400">{c.label}</div>
               <div className={`text-2xl font-extrabold ${c.accent}`}>
                 <bdi>{c.value}</bdi>
               </div>
@@ -144,7 +144,7 @@ export function FounderPanel({
               aria-pressed={tab === t.id}
               className={`min-h-[44px] rounded-lg px-4 text-sm font-medium ${
                 tab === t.id
-                  ? "bg-[#D97706] text-white"
+                  ? "bg-[#B45309] text-white"
                   : "border border-[#334155] text-slate-400 hover:text-slate-200"
               }`}
             >
@@ -166,7 +166,7 @@ export function FounderPanel({
                       (h) => (
                         <th
                           key={h}
-                          className="px-3.5 py-2.5 text-[11px] font-semibold text-slate-500"
+                          className="px-3.5 py-2.5 text-[11px] font-semibold text-slate-400"
                         >
                           {h}
                         </th>
@@ -183,7 +183,7 @@ export function FounderPanel({
                           <div className="text-[13px] font-semibold text-slate-100">
                             <bdi>{r.name}</bdi>
                           </div>
-                          <div className="text-[11px] text-slate-500">
+                          <div className="text-[11px] text-slate-400">
                             <bdi>{r.owner_email ?? "—"}</bdi>
                           </div>
                         </td>
@@ -272,7 +272,7 @@ export function FounderPanel({
                   <ActionButton
                     onClick={() => run("activate", r.tenant_id)}
                     disabled={busyId === r.tenant_id}
-                    className="min-h-[44px] bg-[#D97706] px-5 text-[13px] font-bold text-white hover:bg-[#B45309]"
+                    className="min-h-[44px] bg-[#B45309] px-5 text-[13px] font-bold text-white hover:bg-[#92400E]"
                   >
                     تفعيل الحساب ✓
                   </ActionButton>
@@ -310,7 +310,7 @@ function ActionButton({
 
 function EmptyCard({ text }: { text: string }) {
   return (
-    <div className="rounded-xl border border-[#334155] bg-[#1B2A3D] p-8 text-center text-sm text-slate-500">
+    <div className="rounded-xl border border-[#334155] bg-[#1B2A3D] p-8 text-center text-sm text-slate-400">
       {text}
     </div>
   );
