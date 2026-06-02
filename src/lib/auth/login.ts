@@ -11,15 +11,15 @@ export function mapAuthError(message: string | undefined): string {
   return "تعذّر إتمام العملية، تأكد من البيانات وحاول مجدداً";
 }
 
-export type AuthActionResult = { ok: boolean; error?: string };
+export type AuthActionResult = { ok: boolean; error?: string; userId?: string };
 
 export async function attemptLogin(
   supabase: SupabaseClient,
   input: { email: string; password: string }
 ): Promise<AuthActionResult> {
-  const { error } = await supabase.auth.signInWithPassword(input);
+  const { data, error } = await supabase.auth.signInWithPassword(input);
   if (error) return { ok: false, error: mapAuthError(error.message) };
-  return { ok: true };
+  return { ok: true, userId: data.user?.id };
 }
 
 export async function requestPasswordReset(
