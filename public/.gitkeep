@@ -1,0 +1,10 @@
+# Keeps the Next.js `public/` directory tracked in git.
+#
+# The production Dockerfile (runner stage) runs:
+#     COPY --from=builder /app/public ./public
+# Next.js standalone output (`output: "standalone"`) does NOT emit a public/
+# directory — static assets in public/ must be copied separately. Without this
+# directory existing in the repo, `docker compose build app` fails at that COPY
+# with: "/app/public": not found — which aborts the first VPS deploy.
+#
+# Drop real static assets (favicon, og images, robots.txt, etc.) here as needed.
