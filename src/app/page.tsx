@@ -12,7 +12,7 @@ export default function LandingPage() {
       <div className="mt-10 flex justify-center gap-4">
         <Link
           href="/pricing"
-          className="rounded-lg bg-amber-600 px-6 py-3 font-medium text-white hover:bg-amber-500"
+          className="rounded-lg bg-brand-amber px-6 py-3 font-medium text-white hover:bg-brand-amber-hover"
         >
           الأسعار
         </Link>

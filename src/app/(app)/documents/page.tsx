@@ -146,7 +146,7 @@ export default function DocumentsPage() {
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className="min-h-[44px] rounded-lg bg-[#D97706] px-5 text-sm font-semibold text-white transition hover:bg-[#b45f05] disabled:opacity-60"
+          className="min-h-[44px] rounded-lg bg-brand-amber px-5 text-sm font-semibold text-white transition hover:bg-brand-amber-hover disabled:opacity-60"
         >
           {uploading ? "جارٍ الرفع..." : "+ رفع وثيقة"}
         </button>

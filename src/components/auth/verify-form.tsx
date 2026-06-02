@@ -102,7 +102,7 @@ export function VerifyForm() {
         <button
           type="submit"
           disabled={loading || code.length !== 6}
-          className="w-full rounded-lg bg-[#D97706] px-6 py-3 min-h-[44px] font-medium text-white hover:bg-[#F59E0B] disabled:opacity-60"
+          className="w-full rounded-lg bg-brand-amber px-6 py-3 min-h-[44px] font-medium text-white hover:bg-brand-amber-hover disabled:opacity-60"
         >
           {loading ? "جارٍ التحقق…" : "تحقّق"}
         </button>

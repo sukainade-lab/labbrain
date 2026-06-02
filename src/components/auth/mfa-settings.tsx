@@ -15,7 +15,7 @@ const field =
   "w-full rounded-lg border border-[#334155] bg-[#0F172A] px-4 py-3 min-h-[44px] text-slate-100 placeholder:text-slate-500 focus:border-[#D97706] focus:outline-none";
 const codeField = `${field} text-center text-2xl tracking-[0.5em] placeholder:tracking-normal`;
 const primaryBtn =
-  "w-full rounded-lg bg-[#D97706] px-6 py-3 min-h-[44px] font-medium text-white hover:bg-[#F59E0B] disabled:opacity-60";
+  "w-full rounded-lg bg-brand-amber px-6 py-3 min-h-[44px] font-medium text-white hover:bg-brand-amber-hover disabled:opacity-60";
 
 type Stage = "idle" | "code";
 type Flow = "enroll" | "disable";

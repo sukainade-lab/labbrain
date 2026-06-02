@@ -63,7 +63,7 @@ export function ForgotForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-[#D97706] px-6 py-3 font-medium text-white hover:bg-[#F59E0B] disabled:opacity-60"
+          className="w-full rounded-lg bg-brand-amber px-6 py-3 font-medium text-white hover:bg-brand-amber-hover disabled:opacity-60"
         >
           {loading ? "جارٍ الإرسال…" : "إرسال رابط إعادة التعيين"}
         </button>

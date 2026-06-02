@@ -47,7 +47,7 @@ export default async function OnboardingPage({
       <div className="mt-8 flex flex-col gap-3">
         <Link
           href={resume ? resumeCheckoutHref(resume) : "/pricing"}
-          className="w-full rounded-lg bg-[#D97706] px-6 py-3 font-medium text-white hover:bg-[#F59E0B]"
+          className="w-full rounded-lg bg-brand-amber px-6 py-3 font-medium text-white hover:bg-brand-amber-hover"
         >
           {resumedPlanName ? `أكمل الاشتراك في خطة ${resumedPlanName}` : "اختيار الخطة"}
         </Link>

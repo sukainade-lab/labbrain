@@ -3,7 +3,7 @@ import { forwardRef, type ButtonHTMLAttributes } from "react";
 type Variant = "primary" | "outline";
 
 const styles: Record<Variant, string> = {
-  primary: "bg-amber-600 text-white hover:bg-amber-500",
+  primary: "bg-brand-amber text-white hover:bg-brand-amber-hover",
   outline: "border border-slate-600 text-slate-200 hover:border-amber-500"
 };
 

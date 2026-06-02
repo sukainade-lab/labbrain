@@ -131,7 +131,7 @@ export function InvoiceRequestForm({ defaultPlan }: { defaultPlan?: string }) {
         <button
           type="submit"
           disabled={loading}
-          className="min-h-[44px] w-full rounded-lg bg-[#D97706] px-6 py-3 font-medium text-white hover:bg-[#F59E0B] disabled:opacity-60"
+          className="min-h-[44px] w-full rounded-lg bg-brand-amber px-6 py-3 font-medium text-white hover:bg-brand-amber-hover disabled:opacity-60"
         >
           {loading ? "جارٍ الإرسال…" : "إرسال الطلب"}
         </button>
