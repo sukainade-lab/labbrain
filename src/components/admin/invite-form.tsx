@@ -61,6 +61,7 @@ export function InviteForm() {
           className="rounded-lg border border-[#334155] bg-[#0F172A] px-4 py-3 text-slate-100 focus:border-[#D97706] focus:outline-none"
           value={role}
           onChange={(e) => setRole(e.target.value as Role)}
+          aria-label="دور العضو"
         >
           <option value="member">عضو</option>
           <option value="admin">مشرف</option>
@@ -68,7 +69,7 @@ export function InviteForm() {
         <button
           type="submit"
           disabled={loading}
-          className="whitespace-nowrap rounded-lg bg-[#D97706] px-6 py-3 font-medium text-white hover:bg-[#F59E0B] disabled:opacity-60"
+          className="min-h-[44px] whitespace-nowrap rounded-lg bg-[#B45309] px-6 py-3 font-medium text-white hover:bg-[#92400E] disabled:opacity-60"
         >
           {loading ? "جارٍ الإرسال…" : "إرسال دعوة"}
         </button>
