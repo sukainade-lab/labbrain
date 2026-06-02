@@ -22,3 +22,5 @@ date,story,product,architecture,engineering,qa,ux,composite,decision
 2026-06-02,S7-sms-2fa,10,9,10,9,10,96,shipped-pr9-5985c80
 2026-06-02,S8-founder-panel,9,10,10,9,9,94,ship-ci-green-pr12-authorized-merge
 2026-06-02,S8-founder-panel,9,10,10,9,9,94,shipped-pr12-017c5bc
+2026-06-02,S9-audit-export,9,9,9,9,8,88,bridge-ux-contrast-cta
+2026-06-02,S9-audit-export,9,9,9,9,9,90,bridged-ux-axe-0-violations
