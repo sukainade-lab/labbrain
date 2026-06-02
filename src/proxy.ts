@@ -41,13 +41,25 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Second-factor gate. Read the user's own row (RLS allows self-read) to see if
-  // they've enrolled; if so, require a valid, matching lb_mfa cookie.
+  // Read the user's own row (RLS allows self-read), plus their tenant's status via
+  // the tenants_select_own policy embed — one round-trip for both gates below.
   const { data: me } = await supabase
     .from("users")
-    .select("mfa_enabled")
+    .select("mfa_enabled, tenants(status)")
     .eq("id", user.id)
     .maybeSingle();
+
+  // AC-8.4 — founder pause freeze. When a founder pauses a lab (tenants.status =
+  // 'paused'), its users are locked out of the entire (app) group until unpaused.
+  // This is the enforcement point that gives the founder panel's pause action its
+  // teeth; without it, 'paused' would be a label with no effect. A frozen user is
+  // sent to a public explainer rather than /login (they ARE authenticated).
+  const tenant = me?.tenants as { status?: string } | null | undefined;
+  if (tenant?.status === "paused") {
+    const url = req.nextUrl.clone();
+    url.pathname = "/account-paused";
+    return NextResponse.redirect(url);
+  }
 
   if (me?.mfa_enabled) {
     const secret = process.env.MFA_COOKIE_SECRET ?? "";

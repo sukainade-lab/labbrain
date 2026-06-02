@@ -7,12 +7,18 @@ import type { Currency } from "@/lib/pricing/currency";
 
 export type ProviderName = "stripe" | "tap";
 
+// The provider value as PERSISTED on a subscription row. Wider than ProviderName
+// because the founder can record a bank-transfer/invoice payment as 'manual'
+// (AC-8.5) — that has no checkout or webhook rail, so it's not a ProviderName, but
+// it IS a valid subscriptions.provider value (migration 0010 widened the check).
+export type PersistedProvider = ProviderName | "manual";
+
 // What a captured/active subscription looks like, independent of the provider.
 // Persisted via the provider-aware upsert RPC (migration 0008). For the 'stripe'
 // provider the RPC also mirrors these into the legacy stripe_* columns.
 export interface SubscriptionRecord {
   tenantId: string;
-  provider: ProviderName;
+  provider: PersistedProvider;
   providerCustomerId: string | null;
   providerSubscriptionId: string;
   currency: string;
