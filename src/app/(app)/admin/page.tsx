@@ -1,5 +1,7 @@
 import { InviteForm } from "@/components/admin/invite-form";
 import { AuditExportForm } from "@/components/admin/audit-export-form";
+import { InferenceModeBadge } from "@/components/ops/inference-mode-badge";
+import { describeInferenceMode } from "@/lib/ai/inference-mode";
 import { createClient } from "@/lib/supabase/server";
 
 // AC-4.3 — admin shell: subscription status + activation state per tenant.
@@ -22,10 +24,18 @@ export default async function AdminPage() {
   }
   const canExportAudit = role === "owner" || role === "admin";
 
+  // AC-11.8 — operator-visible inference-mode indicator, resolved server-side from
+  // the deploy env via the display-safe descriptor (never throws).
+  const inferenceView = describeInferenceMode();
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-slate-100">الإدارة</h1>
       <p className="mt-2 text-slate-400">حالة الاشتراك والتفعيل.</p>
+
+      <div className="mt-8">
+        <InferenceModeBadge view={inferenceView} />
+      </div>
 
       <section className="mt-8 rounded-xl border border-[#334155] bg-[#1B2A3D] p-6">
         <h2 className="text-lg font-bold text-slate-100">دعوة فريق المختبر</h2>

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getPlatformAdmin } from "@/lib/founder/guard";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getTenantOverview, summarizeOverview } from "@/lib/founder/stats";
+import { describeInferenceMode } from "@/lib/ai/inference-mode";
 import { FounderPanel } from "@/components/founder/founder-panel";
 
 // AC-8.1 / AC-8.2 / AC-8.3 — the founder super-admin panel. Gated by
@@ -23,5 +24,16 @@ export default async function FounderPage() {
   const rows = await getTenantOverview(db);
   const stats = summarizeOverview(rows);
 
-  return <FounderPanel rows={rows} stats={stats} founderEmail={admin.email} />;
+  // AC-11.8 — operator-visible inference-mode indicator. Resolved server-side from
+  // the deploy env via the display-safe descriptor (never throws).
+  const inferenceView = describeInferenceMode();
+
+  return (
+    <FounderPanel
+      rows={rows}
+      stats={stats}
+      founderEmail={admin.email}
+      inferenceView={inferenceView}
+    />
+  );
 }

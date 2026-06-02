@@ -1,10 +1,12 @@
 import type { SourceBlock } from "@/lib/documents/chunk";
+import { resolveParseBackend } from "@/lib/ai/inference-mode";
 
-// LlamaParse cloud API. Processing-only (transient) — no persistent data leaves
-// Frankfurt (see CLAUDE.md data residency). Mocked at this module boundary in
-// tests; real HTTP in production.
+// LlamaParse. In cloud mode this is the LlamaIndex cloud API (processing-only /
+// transient — no persistent data leaves Frankfurt, see CLAUDE.md data residency).
+// In air-gap mode (S11/AC-11.4) the base URL resolves to a self-hosted LlamaParse
+// instance so document bytes never leave the host. Mocked at this module boundary
+// in tests; real HTTP in production.
 
-const DEFAULT_BASE = "https://api.cloud.llamaindex.ai/api/v1";
 const POLL_INTERVAL_MS = 2000;
 const POLL_TIMEOUT_MS = 120_000;
 
@@ -27,7 +29,8 @@ function requireKey(): string {
 }
 
 function baseUrl(): string {
-  return process.env.LLAMAPARSE_BASE_URL ?? DEFAULT_BASE;
+  // Resolved from INFERENCE_MODE: cloud default (or override) vs self-hosted (airgap).
+  return resolveParseBackend().baseURL;
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
