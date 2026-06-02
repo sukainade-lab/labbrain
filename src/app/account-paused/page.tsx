@@ -16,7 +16,7 @@ export default function AccountPausedPage() {
         </p>
         <a
           href="mailto:founder@labbrain.app"
-          className="mt-6 inline-block rounded-lg bg-[#D97706] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#B45309]"
+          className="mt-6 inline-block rounded-lg bg-brand-amber px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-amber-hover"
         >
           تواصل معنا
         </a>

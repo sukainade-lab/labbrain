@@ -104,7 +104,7 @@ export default function QaPage() {
             type="button"
             onClick={onAsk}
             disabled={loading || !question.trim()}
-            className="min-h-[44px] rounded-lg bg-[#D97706] px-6 text-sm font-semibold text-white transition hover:bg-[#b45f05] disabled:bg-[#374151] disabled:opacity-80"
+            className="min-h-[44px] rounded-lg bg-brand-amber px-6 text-sm font-semibold text-white transition hover:bg-brand-amber-hover disabled:bg-[#374151] disabled:opacity-80"
           >
             {loading ? "⏳ يبحث في الوثائق..." : "🔍 ابحث في وثائقك"}
           </button>

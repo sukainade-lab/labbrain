@@ -79,7 +79,7 @@ export default function PricingPage() {
           aria-pressed={interval === "month"}
           className={`min-h-[44px] rounded-full px-5 text-sm font-medium transition ${
             interval === "month"
-              ? "bg-amber-600 text-white"
+              ? "bg-brand-amber text-white"
               : "text-slate-300 hover:text-white"
           }`}
         >
@@ -91,7 +91,7 @@ export default function PricingPage() {
           aria-pressed={interval === "year"}
           className={`min-h-[44px] rounded-full px-5 text-sm font-medium transition ${
             interval === "year"
-              ? "bg-amber-600 text-white"
+              ? "bg-brand-amber text-white"
               : "text-slate-300 hover:text-white"
           }`}
         >
@@ -151,7 +151,7 @@ export default function PricingPage() {
                 onClick={() => onChoosePlan(plan.id)}
                 disabled={cta.disabled}
                 aria-busy={cta.busy}
-                className="mt-8 block w-full min-h-[44px] rounded-lg bg-amber-600 px-6 py-3 text-center font-medium text-white hover:bg-amber-500 disabled:opacity-60"
+                className="mt-8 block w-full min-h-[44px] rounded-lg bg-brand-amber px-6 py-3 text-center font-medium text-white hover:bg-brand-amber-hover disabled:opacity-60"
               >
                 {cta.label}
               </button>

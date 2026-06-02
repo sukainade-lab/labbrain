@@ -87,7 +87,7 @@ export function AuditExportForm() {
         <button
           type="submit"
           disabled={loading}
-          className="min-h-[44px] whitespace-nowrap rounded-lg bg-[#B45309] px-6 py-3 font-medium text-white hover:bg-[#92400E] disabled:opacity-60"
+          className="min-h-[44px] whitespace-nowrap rounded-lg bg-brand-amber px-6 py-3 font-medium text-white hover:bg-brand-amber-hover disabled:opacity-60"
         >
           {loading ? "جارٍ التصدير…" : "تصدير سجل الأسئلة (PDF)"}
         </button>

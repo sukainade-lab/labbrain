@@ -90,7 +90,7 @@ export function FounderPanel({
     <div className="min-h-screen bg-[#0F172A] text-slate-200">
       <header className="flex items-center justify-between border-b border-[#334155] bg-[#1B2A3D] px-6 py-3.5">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#B45309] text-sm font-bold text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-amber text-sm font-bold text-white">
             LB
           </div>
           <div className="flex items-baseline gap-2">
@@ -144,7 +144,7 @@ export function FounderPanel({
               aria-pressed={tab === t.id}
               className={`min-h-[44px] rounded-lg px-4 text-sm font-medium ${
                 tab === t.id
-                  ? "bg-[#B45309] text-white"
+                  ? "bg-brand-amber text-white"
                   : "border border-[#334155] text-slate-400 hover:text-slate-200"
               }`}
             >
@@ -272,7 +272,7 @@ export function FounderPanel({
                   <ActionButton
                     onClick={() => run("activate", r.tenant_id)}
                     disabled={busyId === r.tenant_id}
-                    className="min-h-[44px] bg-[#B45309] px-5 text-[13px] font-bold text-white hover:bg-[#92400E]"
+                    className="min-h-[44px] bg-brand-amber px-5 text-[13px] font-bold text-white hover:bg-brand-amber-hover"
                   >
                     تفعيل الحساب ✓
                   </ActionButton>
