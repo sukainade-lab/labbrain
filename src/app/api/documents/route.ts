@@ -115,7 +115,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("documents")
-    .select("id, filename, status, page_count, created_at")
+    .select("id, filename, status, page_count, version, created_at")
     .order("created_at", { ascending: false });
   if (error) return NextResponse.json({ error: "تعذّر جلب الوثائق" }, { status: 500 });
 
