@@ -1,6 +1,6 @@
 # Lessons — LabBrain
 
-Last pruned: 2026-06-02 (Sprint 4 retro — 0 archived, 0 pruned; all lessons <90d). L8 added.
+Last pruned: 2026-06-02 (Sprint 5 retro — 0 archived, 0 pruned; all lessons <90d). L9 added.
 
 ## Active lessons
 
@@ -118,6 +118,22 @@ criterion — the tags don't get to invent the scope.
 **Effect on scoring:** QA hat capped at 9 for any story whose ACs exist only as a
 backlog one-liner with no enumerated `AC-N.N` spec. (Caps at 9, not 8 — an evidence/
 spec-hygiene gap, sibling to L7.)
+
+### L9 — Fix AA failures on the story's own primary CTA before scoring; "pre-existing" is not a shield (2026-06-02, Sprint 5 retro; pattern S8 + S9)
+**Trigger:** S8 and S9 hit the same app-wide button contrast failure — white-on-`#D97706`
+= 3.19:1, fails WCAG-AA. S8's L7 walk found it and **fixed it inline before
+`/5-eo-score`** → UX 9, no round-trip. S9's walk found the same class of failure on its
+own **export CTA** but **deferred it** as "pre-existing / not an S9 regression" → the
+scorer dinged the primary CTA of the story's own surface anyway → UX 8 → a bridge
+round-trip (88→90) to apply the very fix S8 had done inline. Provenance bought nothing.
+**Rule:** when the L7 walk surfaces a serious/critical a11y failure (contrast, accessible
+name, target size) on an element the story **ships or owns on its surface** — especially
+the primary CTA — fix it before `/5-eo-score`, even if the pattern is inherited app-wide.
+"It was already like that" does not exempt the story's own primary control. If the proper
+fix is a shared token, do the token (or a scoped local fix) in the same PR; spin off only
+the *other* surfaces the story doesn't touch.
+**Effect on scoring:** UX hat capped at 9 for any story that ships a known serious/critical
+a11y failure on its own primary CTA, regardless of whether the pattern pre-existed.
 
 ## Archived lessons
 
