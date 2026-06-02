@@ -7,10 +7,13 @@
 	encode zstd gzip
 
 	# Forward everything to the Next.js standalone server.
-	reverse_proxy app:3000
-
-	# Pass the real client IP/scheme through to the app.
-	header_up X-Forwarded-Proto {scheme}
+	# `header_up` is a reverse_proxy subdirective and MUST live inside this block —
+	# at the site level Caddy rejects it ("unrecognized directive: header_up") and
+	# refuses to start. Caddy already sets X-Forwarded-{Proto,For,Host} on proxied
+	# requests; this is kept explicit for clarity.
+	reverse_proxy app:3000 {
+		header_up X-Forwarded-Proto {scheme}
+	}
 
 	# Lightweight security headers (HSTS only over the auto-provisioned TLS).
 	header {
