@@ -11,6 +11,7 @@ import {
 } from "@/lib/pricing/plans";
 import { startCheckout } from "@/lib/payment/checkout-client";
 import { parseResume, checkoutCtaState, type Resume } from "@/lib/payment/resume";
+import { DEFAULT_CURRENCY } from "@/lib/pricing/currency";
 
 // AC-4.1 — pricing page: Starter 35 / Pro 70 JOD, monthly⇄annual toggle (annual −25%).
 // Plan/cap data comes from lib/pricing/plans (single source of truth).
@@ -42,15 +43,21 @@ export default function PricingPage() {
   async function onChoosePlan(planId: string) {
     setError(null);
     setPendingPlan(planId);
-    await startCheckout(planId, interval, {
-      redirect: (url) => {
-        window.location.href = url;
+    await startCheckout(
+      planId,
+      interval,
+      {
+        redirect: (url) => {
+          window.location.href = url;
+        },
+        onError: (msg) => {
+          setError(msg);
+          setPendingPlan(null);
+        }
       },
-      onError: (msg) => {
-        setError(msg);
-        setPendingPlan(null);
-      }
-    });
+      // JOD is the live default → the server router sends this to Tap (AC-6.1/6.6).
+      DEFAULT_CURRENCY
+    );
   }
 
   return (
@@ -119,7 +126,7 @@ export default function PricingPage() {
               <h2 className="text-xl font-semibold text-slate-100">{plan.nameAr}</h2>
 
               <p className="mt-4 text-3xl font-bold text-amber-500">
-                {perMonth}{" "}
+                <bdi>{perMonth}</bdi>{" "}
                 <span className="text-base font-normal text-slate-400">
                   <Jod /> / شهرياً
                 </span>
@@ -127,7 +134,7 @@ export default function PricingPage() {
 
               {interval === "year" ? (
                 <p className="mt-1 text-sm text-slate-400">
-                  تُدفع سنوياً: {yearTotal} <Jod /> / سنة
+                  تُدفع سنوياً: <bdi>{yearTotal}</bdi> <Jod /> / سنة
                 </p>
               ) : (
                 <p className="mt-1 text-sm text-slate-500">أو وفّر {DISCOUNT_PCT}% بالاشتراك السنوي</p>

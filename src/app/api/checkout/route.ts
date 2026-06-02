@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { createCheckoutSession } from "@/lib/payment/stripe/checkout";
-import { resolvePriceId } from "@/lib/payment/stripe/prices";
+import { pickProvider, getProvider } from "@/lib/payment/router";
+import { isSupportedCurrency, DEFAULT_CURRENCY, type Currency } from "@/lib/pricing/currency";
 import { captureError } from "@/lib/observability/log";
 
-// AC-4.2 — start a Stripe Checkout (mode: subscription) for the signed-in
-// tenant. Auth is required; the marketing CTA routes unauthenticated visitors
-// to /signup?plan= first, and this handler returns 401 if they reach it anyway.
+// AC-4.2 / AC-6.2 — start a checkout for the signed-in tenant. The provider is
+// chosen by currency (AC-6.1 pickProvider): JOD/KWD/SAR → Tap, else Stripe. An
+// ABSENT currency stays on Stripe so the shipped S4 loop is unchanged. Auth is
+// required; the marketing CTA routes unauthenticated visitors to /signup?plan=
+// first, and this handler returns 401 if they reach it anyway.
 const checkoutSchema = z.object({
   plan: z.enum(["starter", "pro"]),
-  interval: z.enum(["month", "year"]).default("month")
+  interval: z.enum(["month", "year"]).default("month"),
+  // Optional: the pricing UI sends the user-facing currency (JOD default → Tap).
+  currency: z.string().optional()
 });
 
 export async function POST(req: Request) {
@@ -36,25 +40,32 @@ export async function POST(req: Request) {
     .single();
   if (!me) return NextResponse.json({ error: "غير مصرّح" }, { status: 401 });
 
-  // Reuse this tenant's Stripe customer if one already exists (RLS scopes the
-  // read to the tenant's own subscription row).
+  // Reuse this tenant's existing provider customer if one already exists (RLS
+  // scopes the read to the tenant's own subscription row).
   const { data: sub } = await supabase
     .from("subscriptions")
     .select("stripe_customer_id")
     .eq("tenant_id", me.tenant_id)
     .maybeSingle();
 
+  // Route by the raw user-facing currency; pass a typed Currency into the provider
+  // (Stripe ignores it — it bills by price id; Tap charges in it).
+  const rawCurrency = parsed.data.currency;
+  const provider = getProvider(pickProvider(rawCurrency));
+  const currency: Currency = isSupportedCurrency(rawCurrency ?? "")
+    ? (rawCurrency as Currency)
+    : DEFAULT_CURRENCY;
+
   try {
-    const priceId = resolvePriceId(parsed.data.plan, parsed.data.interval);
-    const session = await createCheckoutSession({
-      priceId,
+    const { url } = await provider.createCheckout({
       tenantId: me.tenant_id,
       plan: parsed.data.plan,
       interval: parsed.data.interval,
+      currency,
       customerEmail: me.email ?? user.email ?? "",
-      stripeCustomerId: sub?.stripe_customer_id ?? null
+      providerCustomerId: sub?.stripe_customer_id ?? null
     });
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url });
   } catch (err) {
     captureError("checkout", err);
     return NextResponse.json({ error: "تعذّر بدء عملية الدفع" }, { status: 500 });

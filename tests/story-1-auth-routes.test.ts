@@ -77,7 +77,7 @@ describe.skipIf(!hasLiveSupabase)("Story 1 — route handlers", () => {
       password: PASSWORD,
       email_confirm: true
     });
-    authUsersToReap.push(created!.user.id);
+    authUsersToReap.push(created!.user!.id);
     return { email };
   }
 
@@ -107,7 +107,7 @@ describe.skipIf(!hasLiveSupabase)("Story 1 — route handlers", () => {
       password: PASSWORD,
       email_confirm: true
     });
-    const ownerId = created!.user.id;
+    const ownerId = created!.user!.id;
     await admin.from("users").insert({ id: ownerId, tenant_id: tenant!.id, email, role: "owner" });
     tenantsToReap.push(tenant!.id);
     return { tenantId: tenant!.id as string, ownerId, ownerEmail: email };
@@ -122,7 +122,7 @@ describe.skipIf(!hasLiveSupabase)("Story 1 — route handlers", () => {
     });
     await admin
       .from("users")
-      .insert({ id: created!.user.id, tenant_id: tenantId, email, role: "member" });
+      .insert({ id: created!.user!.id, tenant_id: tenantId, email, role: "member" });
   }
 
   beforeAll(() => {

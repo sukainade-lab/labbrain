@@ -3,7 +3,8 @@
 // unit-testable without a DOM. The page passes real `redirect`/`onError` impls.
 //
 // Contract mirrors /api/checkout:
-//   • 200 { url }  → an authenticated tenant: redirect to Stripe Checkout.
+//   • 200 { url }  → an authenticated tenant: redirect to the provider's page
+//                    (AC-6.1 router picks Tap for JOD/Gulf, Stripe otherwise).
 //   • 401          → not signed in: send them to /signup carrying plan+interval,
 //                    then onboarding → /pricing resumes the purchase.
 //   • anything else → surface a localized error (never a silent no-op).
@@ -19,14 +20,17 @@ export interface StartCheckoutDeps {
 export async function startCheckout(
   plan: string,
   interval: string,
-  deps: StartCheckoutDeps
+  deps: StartCheckoutDeps,
+  // The user-facing currency. When provided it picks the rail server-side (JOD →
+  // Tap). Omitted (the S4 contract) → Stripe, so the shipped loop is unchanged.
+  currency?: string
 ): Promise<void> {
   const fetchFn = deps.fetchFn ?? fetch;
   try {
     const res = await fetchFn("/api/checkout", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ plan, interval })
+      body: JSON.stringify(currency ? { plan, interval, currency } : { plan, interval })
     });
 
     // Not signed in → create an account first, carrying the chosen plan.

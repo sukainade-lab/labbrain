@@ -26,7 +26,8 @@ describe("@AC-4.2 startCheckout (CTA wiring)", () => {
       expect.objectContaining({ method: "POST" })
     );
     // the body carries the selected plan + interval
-    const sentBody = JSON.parse((fetchFn.mock.calls[0][1] as RequestInit).body as string);
+    const init = (fetchFn.mock.calls[0] as unknown as [string, RequestInit])[1];
+    const sentBody = JSON.parse(init.body as string);
     expect(sentBody).toEqual({ plan: "pro", interval: "year" });
     expect(redirect).toHaveBeenCalledWith("https://checkout.stripe/x");
     expect(onError).not.toHaveBeenCalled();
