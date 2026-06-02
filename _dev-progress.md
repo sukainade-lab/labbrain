@@ -49,10 +49,11 @@ Next options:
 Standing (surface, do not work around): **rotate the GitHub PAT** (pasted plaintext earlier — live/active for `sukainade-lab`); `.claude/settings.json` SessionStart hook still awaiting explicit approval.
 
 ---
-**Last updated:** 2026-06-02 · **Current sprint:** 2 / ~5 · **Last command:** `/7-eo-ship story-6` — founder-authorized merge of **PR #6 → #7 → #8** in order (`69f7e72` → `5e1c329` → `8a80179`); local `main` fast-forwarded to `8a80179`, all three branches deleted. Post-merge trunk gates green (tsc · 287/287 tests · `next build` · audit documented), composite **90** (no hat <8). Status → ✅ shipped (code on `main`). Live Contabo deploy + `/api/health` 200 remain founder-gated (no VPS/secrets). Next: `/8-eo-retro` (Sprint 2) or `/2-eo-dev-plan story-7`.
+**Last updated:** 2026-06-02 · **Current sprint:** 2 / ~5 · **Last command:** `/8-eo-retro` — Sprint 2 retro → `docs/retros/2026-06-02-sprint2.md`. 3 PRs shipped (#6/#7/#8); S6 first-pass 88 → shipped 90. Self-improvement loop confirmed working: L4 held Product 9 (no orphaned money loop, unlike S4's 6) and L5 held UX 9 (`<bdi>` from first commit, unlike S2/S4's 8) — both chronic Sprint-1 regressions prevented on first pass. New lesson **L6** added (no real-looking secret prefixes in example/doc/test files; Engineering cap 8). Lessons now 6 active, 0 archived, 0 pruned. Next-sprint focus: process P1 (confirm CI green *before* `/5-eo-score`) to retire the recurring L3 procedural cap. Next: `/2-eo-dev-plan story-7` (SMS 2FA via Unifonic) or live Contabo cutover (founder-gated).
 
 ## Retros
 - 2026-06-02 — `docs/retros/2026-06-02.md` (Sprint 1 / Weekend MVP S1–S5; 5 PRs shipped; first-pass avg composite 87.6, all bridged to 100; focus hat: UX — repeat `<bdi>` miss → L5; process proposals P1 CI-before-score, P2 ingester regex).
+- 2026-06-02 — `docs/retros/2026-06-02-sprint2.md` (Sprint 2 / S6 Tap Payments + PR #6/#7 hardening; 3 PRs shipped; S6 first-pass 88 → shipped 90; loop prevented both chronic Sprint-1 regressions on first pass — L4 kept Product at 9 (no orphaned flow), L5 kept UX at 9 (`<bdi>` from first commit); new L6 = no secret-prefix literals in example/doc files; focus: process P1 CI-before-score to kill the recurring L3 cap).
 
 ## Reconciliation log
 - 2026-06-01 — `/eo-guide`: filesystem matches tracker (all S1–S5 ⬜, no plans, git local without remote). No diff. Phase = `ready-to-plan`.

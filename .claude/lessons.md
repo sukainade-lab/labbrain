@@ -74,6 +74,20 @@ Arabic labels don't need it; dynamic/user/data-derived strings do.
 **Effect on scoring:** UX hat capped at 8 for any story that renders dynamic
 mixed-script content into RTL without BiDi isolation.
 
+### L6 — Never write a real-looking secret prefix in example/doc/test files (2026-06-02, S6)
+**Trigger:** S6's `.env.example` Tap comment used a literal `sk_live_…` to illustrate
+the key shape. The S5 leak-guard test (`/sk_live_|whsec_[A-Za-z0-9]|sb_secret_|pk_live_/`)
+matched the **prefix itself** and reddened the whole suite at `/5-eo-score` time, even
+though nothing real was leaked — the string was documentation. The scanner can't
+distinguish "illustrative prefix" from "real key," and neither can a reviewer skimming
+a diff. Caught by an existing test before scoring; fixed by rewording to `sk_…`.
+**Rule:** in `.env.example`, `docs/`, code comments, and test fixtures, never write a
+real-looking secret **prefix** — `sk_live_`, `sk_test_`, `whsec_`, `pk_live_`,
+`sb_secret_`, `Bearer eyJ…`, etc. Use an abstract placeholder shape instead (`sk_…`,
+`<tap-secret-key>`, `whsec_REDACTED`). Real secrets live only in gitignored `.env.local`.
+**Effect on scoring:** Engineering hat capped at 8 for any story whose tracked files
+contain a literal secret prefix, even in documentation/comment context.
+
 ## Archived lessons
 
 None.
