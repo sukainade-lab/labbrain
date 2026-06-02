@@ -1,6 +1,6 @@
 # Lessons — LabBrain
 
-Last pruned: 2026-06-02 (Sprint 8 retro / S12 — 0 archived, 0 pruned; all 9 lessons <90d, none cap-bit this sprint — all proactively satisfied). 9 active (L1–L9); no new lesson minted Sprint 6, 7, or 8.
+Last pruned: 2026-06-02 (Sprint 9 retro / S13 — 0 archived, 0 pruned; all 9 lessons <90d, none cap-bit this sprint — all proactively satisfied). 9 active (L1–L9); no new lesson minted Sprint 6, 7, 8, or 9.
 
 ## Active lessons
 
