@@ -25,3 +25,4 @@ date,story,product,architecture,engineering,qa,ux,composite,decision
 2026-06-02,S9-audit-export,9,9,9,9,8,88,bridge-ux-contrast-cta
 2026-06-02,S9-audit-export,9,9,9,9,9,90,bridged-ux-axe-0-violations
 2026-06-02,S9-audit-export,9,9,9,9,9,90,shipped-pr14-b90c3c9
+2026-06-02,a11y-button-token,10,10,10,10,10,100,shipped-pr16-9c2e7e4
