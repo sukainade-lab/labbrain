@@ -22,6 +22,8 @@ function row(over: Partial<TenantOverviewRow>): TenantOverviewRow {
     doc_count: 0,
     questions_this_month: 0,
     active_interval: "month",
+    data_region: "eu-frankfurt",
+    migration_status: null,
     ...over
   };
 }

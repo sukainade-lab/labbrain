@@ -1,5 +1,6 @@
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { getPlan, monthlyEquivalent, type Interval, type PlanId } from "@/lib/pricing/plans";
+import type { MigrationStatus } from "@/lib/migration/state";
 
 type Admin = ReturnType<typeof createAdminClient>;
 
@@ -19,6 +20,10 @@ export interface TenantOverviewRow {
   questions_this_month: number;
   /** price_interval of the tenant's active subscription, if any (else monthly). */
   active_interval: Interval | null;
+  /** Live residency pointer (S10): 'eu-frankfurt' | 'ksa-me-central-1'. */
+  data_region: string;
+  /** Status of the tenant's most-recent migration run, or null if none (S10). */
+  migration_status: MigrationStatus | null;
 }
 
 export interface PlatformStats {
