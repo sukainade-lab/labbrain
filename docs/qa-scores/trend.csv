@@ -30,3 +30,4 @@ date,story,product,architecture,engineering,qa,ux,composite,decision
 2026-06-02,S10-ksa-migration,9,9,9,9,9,90,shipped-pr18-9ddfa28
 2026-06-02,S11-airgap-mode,9,9,9,9,9,90,score-ci-green-pr21-awaiting-merge
 2026-06-02,S11-airgap-mode,9,9,9,9,9,90,shipped-pr21-2678e4d
+2026-06-02,S12-branding,9,9,10,9,10,94,score-ci-green-pr23-awaiting-merge
