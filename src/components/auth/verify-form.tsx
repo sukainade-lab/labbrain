@@ -88,6 +88,7 @@ export function VerifyForm() {
         <div aria-live="polite" className="min-h-[1.25rem]">
           {error && (
             <p className="rounded-lg bg-red-950/50 px-4 py-2 text-sm text-red-300" role="alert">
+              <span aria-hidden="true">⚠️ </span>
               {error}
             </p>
           )}
