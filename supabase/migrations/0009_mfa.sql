@@ -25,7 +25,7 @@ alter table users add column phone_verified_at timestamptz;
 -- plaintext never lands in the DB. attempts counts wrong guesses against this
 -- challenge; consumed_at marks single-use (a correct verify or a disable burns it).
 create table mfa_challenges (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   user_id       uuid not null references users(id) on delete cascade,
   purpose       text not null check (purpose in ('login', 'enroll', 'disable')),
   code_hash     text not null,

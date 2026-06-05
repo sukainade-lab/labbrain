@@ -19,7 +19,7 @@ alter table tenants
 -- The row at status='cutover' is the auditable "who moved what, when, verified
 -- how" evidence: started_by (admin email), verification_hash, row_counts, times.
 create table tenant_migrations (
-  id                 uuid primary key default uuid_generate_v4(),
+  id                 uuid primary key default gen_random_uuid(),
   tenant_id          uuid not null references tenants(id) on delete cascade,
   source_region      text not null default 'eu-frankfurt',
   target_region      text not null default 'ksa-me-central-1',

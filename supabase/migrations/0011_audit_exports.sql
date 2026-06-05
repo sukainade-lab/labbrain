@@ -4,7 +4,7 @@
 -- the same tenant-isolation RLS that guards the exported rows guards the log too.
 
 create table audit_exports (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   tenant_id     uuid not null references tenants(id) on delete cascade,
   user_id       uuid references users(id) on delete set null,
   range_from    date,
