@@ -1,12 +1,17 @@
 -- LabBrain initial schema — multi-tenant, RTL-agnostic, pgvector for RAG.
 -- AC-1.3 / AC-2.4 / AC-5.7: tenant isolation enforced via RLS (see 0002_rls_policies.sql).
 
-create extension if not exists "uuid-ossp";
-create extension if not exists vector;
+-- pgvector lives in `public` so bare `vector(1536)` columns/params and the
+-- `set search_path = public` RPCs (0003/0004/0006/0014) resolve the type at
+-- runtime. On hosted Supabase extensions live in the `extensions` schema, which
+-- is off the default search_path — hence the explicit `with schema public`.
+-- UUID defaults use the built-in pg_catalog gen_random_uuid() (PG13+), so there
+-- is no dependency on uuid-ossp (which Supabase pre-installs into `extensions`).
+create extension if not exists vector with schema public;
 
 -- ── Tenants (one row per lab) ────────────────────────────────────────────────
 create table tenants (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   name          text not null,
   plan          text not null default 'starter' check (plan in ('starter', 'pro')),
   status        text not null default 'inactive'
@@ -26,7 +31,7 @@ create index users_tenant_idx on users(tenant_id);
 
 -- ── Documents (uploaded source files) ────────────────────────────────────────
 create table documents (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   tenant_id     uuid not null references tenants(id) on delete cascade,
   filename      text not null,
   storage_path  text not null,
@@ -39,7 +44,7 @@ create index documents_tenant_idx on documents(tenant_id);
 
 -- ── Document chunks (embeddings for retrieval; OpenAI text-embedding-3-small = 1536d) ─
 create table document_chunks (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   tenant_id     uuid not null references tenants(id) on delete cascade,
   document_id   uuid not null references documents(id) on delete cascade,
   chunk_index   int not null,
@@ -55,7 +60,7 @@ create index chunks_embedding_idx on document_chunks
 
 -- ── Queries (Q&A history with mandatory citation) ────────────────────────────
 create table queries (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   tenant_id     uuid not null references tenants(id) on delete cascade,
   user_id       uuid references users(id) on delete set null,
   question      text not null,
@@ -67,7 +72,7 @@ create index queries_tenant_idx on queries(tenant_id);
 
 -- ── Subscriptions (Stripe — founder override) ────────────────────────────────
 create table subscriptions (
-  id                      uuid primary key default uuid_generate_v4(),
+  id                      uuid primary key default gen_random_uuid(),
   tenant_id               uuid not null references tenants(id) on delete cascade,
   stripe_customer_id      text,
   stripe_subscription_id  text,
@@ -81,7 +86,7 @@ create unique index subscriptions_stripe_sub_idx
 
 -- ── Invitations (team onboarding) ────────────────────────────────────────────
 create table invitations (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   tenant_id     uuid not null references tenants(id) on delete cascade,
   email         text not null,
   role          text not null default 'member' check (role in ('admin', 'member')),

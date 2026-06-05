@@ -79,6 +79,43 @@ Weekend MVP = Stories S1–S5. v2 = S6–S16 `[@Phase2]`.
 - `/eo-review` before every commit; 5-hat scorecard before every PR (save to `docs/qa-scores/`).
 - Bugs → `/eo-debug` (systematic, root-cause, no guessing).
 
+## Operations & infrastructure ownership (Claude-owned)
+
+The founder has delegated **GitHub + Supabase database + server admin** to Claude, operated
+through the connected MCP servers (`Github-sukaina`, `Supabase-sukaina`). Standing rules:
+
+- **Never write a secret into this file or any committed file.** Secret *values* live ONLY in
+  the VPS `/opt/labbrain/.env` (gitignored, chmod 600). This file records *names + non-secret
+  facts* only. The `secret-scanner` hook is the backstop.
+- **Never push directly to `main`; never merge a PR without explicit founder authorization
+  naming the PR.** Work goes via feature branch → PR. Never force-push / hard-reset / delete
+  branches without explicit instruction.
+- **Production DB DDL requires explicit founder authorization** per change set (the auto-mode
+  classifier enforces this; do not route around it).
+
+### Production Supabase (the live database — EU residency honored)
+
+| Field | Value |
+|-------|-------|
+| Project name | `labbrain-prod-eu` |
+| Project ref | `elbsrrtbstxtudnbpvzw` |
+| Region | `eu-central-1` (Frankfurt) — satisfies the data-residency contract |
+| API URL | `https://elbsrrtbstxtudnbpvzw.supabase.co` |
+| Publishable key (public) | `sb_publishable_zpcyJNqnPtegCNh7kZCWhg_inbaQbZl` |
+| Service-role secret | **NOT here** — VPS `.env` only (`SUPABASE_SERVICE_ROLE_KEY`); from dashboard → API keys |
+| Migrations | `0001`–`0016` applied (15 schema + `0016` definer-grant lockdown) |
+
+The old `eftjsgoaepjcmzduuddy` (Sydney / `ap-southeast-2`) project is **abandoned** (partial
+schema, violated EU residency) and is being deleted by the founder. Do not use it.
+
+### Secret inventory (names only — values in VPS `.env`)
+
+`SUPABASE_SERVICE_ROLE_KEY` · `LLAMAPARSE_API_KEY` · `OPENAI_API_KEY` · `RESEND_API_KEY` ·
+`RESEND_FROM_EMAIL` · `PLATFORM_ADMIN_EMAILS` · payment rail (`TAP_SECRET_KEY` or Stripe set).
+
+**Founder-gated, still outstanding:** rotate the GitHub PAT, Contabo API secret, and server
+root password (all were pasted in chat earlier — treat as compromised, rotate post-launch).
+
 ---
 
 **Global precedence:** the global playbook lives at `~/.claude/CLAUDE.md`. This project `CLAUDE.md` overrides global when they conflict. If a rule is missing here, fall through to global.
