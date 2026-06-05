@@ -45,8 +45,8 @@ export default async function SettingsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-100">الإعدادات</h1>
-      <p className="mt-2 text-slate-400">إدارة حسابك وأمانه.</p>
+      <h1 className="text-2xl font-bold text-navy">الإعدادات</h1>
+      <p className="mt-2 text-muted">إدارة حسابك وأمانه.</p>
 
       <div className="mt-8 max-w-xl space-y-8">
         <MfaSettings

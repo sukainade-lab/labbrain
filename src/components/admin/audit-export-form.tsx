@@ -8,7 +8,7 @@ import { useState } from "react";
 // RTL, ≥44px tap targets (L7).
 
 const field =
-  "min-h-[44px] rounded-lg border border-[#334155] bg-[#0F172A] px-4 py-3 text-slate-100 focus:border-[#D97706] focus:outline-none";
+  "min-h-[44px] rounded-control border border-line bg-card px-4 py-3 text-ink shadow-soft focus:border-brand-amber focus:outline-none";
 
 function filenameFromDisposition(res: Response): string | null {
   const disp = res.headers.get("content-disposition");
@@ -62,7 +62,7 @@ export function AuditExportForm() {
   return (
     <form onSubmit={onSubmit} className="mt-4 space-y-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <label className="flex flex-col gap-1 text-sm text-slate-400">
+        <label className="flex flex-col gap-1 text-sm text-muted">
           من تاريخ
           <input
             className={field}
@@ -73,7 +73,7 @@ export function AuditExportForm() {
             aria-label="من تاريخ"
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm text-slate-400">
+        <label className="flex flex-col gap-1 text-sm text-muted">
           إلى تاريخ
           <input
             className={field}
@@ -87,17 +87,17 @@ export function AuditExportForm() {
         <button
           type="submit"
           disabled={loading}
-          className="min-h-[44px] whitespace-nowrap rounded-lg bg-brand-amber px-6 py-3 font-medium text-white hover:bg-brand-amber-hover disabled:opacity-60"
+          className="min-h-[44px] whitespace-nowrap rounded-control bg-brand-amber px-6 py-3 font-semibold text-white shadow-soft transition-all hover:bg-brand-amber-hover hover:shadow-lift disabled:opacity-60"
         >
           {loading ? "جارٍ التصدير…" : "تصدير سجل الأسئلة (PDF)"}
         </button>
       </div>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         اترك الحقول فارغة لتصدير كامل السجل.
       </p>
 
       {error && (
-        <p className="rounded-lg bg-red-950/50 px-4 py-2 text-sm text-red-300" role="alert">
+        <p className="rounded-control bg-danger-soft px-4 py-2 text-sm font-medium text-danger-strong" role="alert">
           <span aria-hidden="true">⚠️ </span>
           {error}
         </p>

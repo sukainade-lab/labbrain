@@ -3,8 +3,10 @@ import { forwardRef, type ButtonHTMLAttributes } from "react";
 type Variant = "primary" | "outline";
 
 const styles: Record<Variant, string> = {
-  primary: "bg-brand-amber text-white hover:bg-brand-amber-hover",
-  outline: "border border-slate-600 text-slate-200 hover:border-amber-500"
+  primary:
+    "bg-brand-amber text-white shadow-soft hover:bg-brand-amber-hover hover:shadow-lift active:translate-y-px",
+  outline:
+    "border border-line bg-card text-ink hover:border-brand-amber hover:text-brand-amber"
 };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -15,7 +17,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ variant = "primary", className = "", ...props }, ref) => (
     <button
       ref={ref}
-      className={`rounded-lg px-6 py-3 font-medium transition-colors ${styles[variant]} ${className}`}
+      className={`rounded-control px-6 py-3 font-semibold transition-all duration-200 ${styles[variant]} ${className}`}
       {...props}
     />
   )

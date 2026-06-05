@@ -2,20 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Design tokens (light navy + amber premium, RTL-first) ──────────────────
+   Mirrors the reference design language. Bright amber (#F5A623) is ACCENT-ONLY;
+   white-on-amber text must use --brand-amber (#B45309, AA pass). */
 :root {
-  --navy: #1b2a3d;
-  --amber: #d97706;
-  --amber-light: #f59e0b;
-  --bg: #0f172a;
+  --navy: #0a1e3f;
+  --navy2: #112c57;
+  --navy3: #1b3d74;
+  --ink: #14233d;
+  --muted: #5b6b85;
+  --line: #e4eaf2;
+  --canvas: #f4f7fb;
+  --card: #ffffff;
+
+  --amber-bright: #f5a623; /* accent only — never behind white text */
+  --amber-soft: #ffeac4;
+  --brand-amber: #b45309; /* AA: white text 5.02:1 */
+  --brand-amber-hover: #92400e; /* AA: white text 7.09:1 */
+
+  --success: #2fa37c;
+  --success-soft: #dbf1e8;
+  --danger: #e2553d;
+  --danger-soft: #fbe2dc;
+  --info: #6e84ae;
+  --info-soft: #e7edf7;
+
+  --shadow: 0 1px 2px rgba(16, 38, 76, 0.06), 0 10px 30px rgba(16, 38, 76, 0.06);
+  --shadow-lift: 0 6px 16px rgba(16, 38, 76, 0.1), 0 22px 48px rgba(16, 38, 76, 0.12);
+  --radius-card: 16px;
+  --radius-control: 11px;
 }
 
 html {
   font-family: "IBM Plex Arabic", "IBM Plex Sans", system-ui, sans-serif;
+  /* tabular figures so KPI numbers + tables align across rows */
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--bg);
-  color: #e2e8f0;
+  background: var(--canvas);
+  color: var(--ink);
 }
 
 /* English technical terms inside Arabic text stay LTR and visually isolated.
@@ -24,4 +52,41 @@ body {
 .bidi-term {
   unicode-bidi: isolate;
   direction: ltr;
+}
+
+/* ── Polish: focus ring, selection, scrollbar ──────────────────────────────
+   AA-safe amber focus ring (brand-amber, not bright) for keyboard nav. */
+*:focus-visible {
+  outline: 2px solid var(--brand-amber);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--amber-soft);
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  * {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Slim, navy-tinted scrollbar to match the premium light surface. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c7d2e4 transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #c7d2e4;
+  border-radius: 999px;
+  border: 2px solid var(--canvas);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #aebed6;
 }

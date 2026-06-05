@@ -30,25 +30,25 @@ export default async function AdminPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-100">الإدارة</h1>
-      <p className="mt-2 text-slate-400">حالة الاشتراك والتفعيل.</p>
+      <h1 className="text-2xl font-bold text-navy">الإدارة</h1>
+      <p className="mt-2 text-muted">حالة الاشتراك والتفعيل.</p>
 
       <div className="mt-8">
         <InferenceModeBadge view={inferenceView} />
       </div>
 
-      <section className="mt-8 rounded-xl border border-[#334155] bg-[#1B2A3D] p-6">
-        <h2 className="text-lg font-bold text-slate-100">دعوة فريق المختبر</h2>
-        <p className="mt-1 text-sm text-slate-400">
+      <section className="mt-8 rounded-card border border-line bg-card p-6 shadow-soft">
+        <h2 className="text-lg font-bold text-navy">دعوة فريق المختبر</h2>
+        <p className="mt-1 text-sm text-muted">
           أضف زملاءك في المختبر — يخضع العدد لحدود خطتك.
         </p>
         <InviteForm />
       </section>
 
       {canExportAudit && (
-        <section className="mt-8 rounded-xl border border-[#334155] bg-[#1B2A3D] p-6">
-          <h2 className="text-lg font-bold text-slate-100">سجل الأسئلة للتدقيق</h2>
-          <p className="mt-1 text-sm text-slate-400">
+        <section className="mt-8 rounded-card border border-line bg-card p-6 shadow-soft">
+          <h2 className="text-lg font-bold text-navy">سجل الأسئلة للتدقيق</h2>
+          <p className="mt-1 text-sm text-muted">
             صدِّر سجل الأسئلة والأجوبة كملف PDF — دليل تدقيق لتقييم JISM، كل إجابة
             موثّقة بمصدرها (اسم الوثيقة والصفحة).
           </p>
@@ -56,16 +56,16 @@ export default async function AdminPage() {
         </section>
       )}
 
-      <table className="mt-8 w-full text-right text-slate-300">
+      <table className="mt-8 w-full text-right text-ink">
         <thead>
-          <tr className="border-b border-slate-700 text-slate-400">
+          <tr className="border-b border-line text-muted">
             <th className="py-2">المختبر</th>
             <th className="py-2">الخطة</th>
             <th className="py-2">الحالة</th>
           </tr>
         </thead>
         <tbody>
-          <tr className="border-b border-slate-800">
+          <tr className="border-b border-line">
             <td className="py-3" colSpan={3}>
               لا توجد بيانات بعد.
             </td>

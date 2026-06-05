@@ -35,3 +35,4 @@ date,story,product,architecture,engineering,qa,ux,composite,decision
 2026-06-02,S13-document-versioning,9,9,9,9,9,90,score-ci-green-pr25-awaiting-merge
 2026-06-02,S13-document-versioning,9,9,9,9,9,90,shipped-pr25-e02b114
 2026-06-03,codebase-qa-hardening,10,10,10,10,10,100,fix-pr-pending-merge
+2026-06-06,S14-design-revamp,9,10,9,9,10,94,score-local-no-push-founder-gated

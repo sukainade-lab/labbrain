@@ -81,13 +81,13 @@ export default function QaPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-100">الأسئلة والأجوبة</h1>
-      <p className="mt-2 text-xs text-slate-400">
+      <h1 className="text-2xl font-bold text-navy">الأسئلة والأجوبة</h1>
+      <p className="mt-2 text-xs text-muted">
         اسأل من وثائق مختبرك فقط — كل إجابة مدعومة بمصدر من ملفاتكم.
       </p>
 
       {/* Input — dir="auto" so an English question flips to LTR as the user types. */}
-      <div className="mt-6 rounded-xl border border-[#334155] bg-[#1B2A3D] p-4">
+      <div className="mt-6 rounded-card border border-line bg-card p-4 shadow-soft">
         <textarea
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
@@ -97,14 +97,14 @@ export default function QaPage() {
           dir="auto"
           rows={3}
           placeholder="اسأل سؤالاً من وثائق مختبرك... (عربي أو إنجليزي)"
-          className="w-full resize-none bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-500"
+          className="w-full resize-none bg-transparent text-sm text-ink outline-none placeholder:text-muted"
         />
         <div className="mt-3 flex justify-start">
           <button
             type="button"
             onClick={onAsk}
             disabled={loading || !question.trim()}
-            className="min-h-[44px] rounded-lg bg-brand-amber px-6 text-sm font-semibold text-white transition hover:bg-brand-amber-hover disabled:bg-[#374151] disabled:opacity-80"
+            className="min-h-[44px] rounded-control bg-brand-amber px-6 text-sm font-semibold text-white shadow-soft transition-all hover:bg-brand-amber-hover hover:shadow-lift disabled:bg-line disabled:text-muted disabled:shadow-none"
           >
             {loading ? "⏳ يبحث في الوثائق..." : "🔍 ابحث في وثائقك"}
           </button>
@@ -112,7 +112,7 @@ export default function QaPage() {
       </div>
 
       {error && (
-        <div className="mt-4 rounded-lg border border-[#92400e] bg-[#3b1c08] px-4 py-3 text-sm text-[#fcd34d]">
+        <div className="mt-4 rounded-control border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-medium text-danger-strong">
           {error}
         </div>
       )}
@@ -120,19 +120,22 @@ export default function QaPage() {
       {/* Q&A history (newest first). */}
       <div className="mt-6 flex flex-col gap-4">
         {messages.length === 0 && !loading && (
-          <div className="rounded-xl border border-dashed border-[#334155] bg-[#1B2A3D] p-8 text-center text-sm text-slate-400">
+          <div className="rounded-card border border-dashed border-line bg-card p-8 text-center text-sm text-muted">
             اطرح أول سؤال لتحصل على إجابة مدعومة بالمصدر من وثائق مختبرك.
           </div>
         )}
 
         {messages.map((msg) => (
-          <div key={msg.id} className="rounded-xl border border-[#334155] bg-[#1B2A3D] p-5">
+          <div
+            key={msg.id}
+            className="rounded-card border border-line bg-card p-5 shadow-soft"
+          >
             {/* Question — direction follows detected language (AC-3.1/3.6). */}
             <div
               dir={msg.lang === "en" ? "ltr" : "rtl"}
-              className="mb-2 text-[13px] text-slate-400"
+              className="mb-2 text-[13px] text-muted"
             >
-              <span className="mx-1 text-[#F59E0B]">◎</span>
+              <span className="mx-1 text-brand-amber">◎</span>
               <bdi>{msg.question}</bdi>
             </div>
 
@@ -142,7 +145,7 @@ export default function QaPage() {
             {msg.found && (
               <div
                 dir={msg.lang === "en" ? "ltr" : "rtl"}
-                className={`text-sm leading-7 text-slate-100 ${
+                className={`text-sm leading-7 text-ink ${
                   msg.lang === "en" ? "text-left" : "text-right"
                 }`}
               >
@@ -159,14 +162,14 @@ export default function QaPage() {
                   <Link
                     key={`${c.document_id}-${c.page_number ?? i}`}
                     href={`/documents?doc=${c.document_id}`}
-                    className="group flex items-start gap-2.5 rounded-lg border border-[#D97706] bg-[#1a1f2e] px-3.5 py-2.5 transition hover:bg-[#22293a] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F59E0B]"
+                    className="group flex items-start gap-2.5 rounded-control border border-amber-bright/50 bg-amber-soft px-3.5 py-2.5 transition hover:border-brand-amber hover:bg-amber-bright/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-amber"
                   >
                     <span className="text-lg leading-none">📄</span>
                     <div className="min-w-0">
-                      <bdi className="block text-xs font-semibold text-[#F59E0B] underline-offset-2 group-hover:underline">
+                      <bdi className="block text-xs font-semibold text-navy underline-offset-2 group-hover:underline">
                         {c.document_name}
                       </bdi>
-                      <div className="mt-0.5 text-[11px] text-slate-300">
+                      <div className="mt-0.5 text-[11px] text-muted">
                         {c.section ? (
                           <>
                             <bdi>{c.section}</bdi>
@@ -188,14 +191,14 @@ export default function QaPage() {
                 search yet, so guide it to /documents rather than implying its
                 files were searched and missed. */}
             {!msg.found && msg.emptyCorpus && (
-              <div className="mt-3 rounded-lg border border-[#334155] bg-[#1a1f2e] px-3.5 py-3 text-xs text-slate-300">
-                <p className="font-semibold text-slate-100">لا توجد وثائق للبحث فيها بعد.</p>
+              <div className="mt-3 rounded-control border border-line bg-canvas px-3.5 py-3 text-xs text-muted">
+                <p className="font-semibold text-navy">لا توجد وثائق للبحث فيها بعد.</p>
                 <p className="mt-1 leading-6">
                   ارفع وثائق مختبرك أولاً، وبعد فهرستها ستحصل على إجابات مدعومة بالمصدر.
                 </p>
                 <Link
                   href="/documents"
-                  className="mt-2 inline-flex min-h-[44px] items-center font-semibold text-[#F59E0B] hover:underline"
+                  className="mt-2 inline-flex min-h-[44px] items-center font-semibold text-brand-amber hover:underline"
                 >
                   رفع الوثائق ←
                 </Link>
@@ -203,7 +206,7 @@ export default function QaPage() {
             )}
 
             {!msg.found && !msg.emptyCorpus && (
-              <div className="mt-3 rounded-lg border border-[#92400e] bg-[#3b1c08] px-3.5 py-2.5 text-xs text-[#fcd34d]">
+              <div className="mt-3 rounded-control border border-danger/30 bg-danger-soft px-3.5 py-2.5 text-xs font-medium text-danger-strong">
                 {msg.answer}
               </div>
             )}

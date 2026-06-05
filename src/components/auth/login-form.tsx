@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 const field =
-  "w-full rounded-lg border border-[#334155] bg-[#0F172A] px-4 py-3 text-slate-100 placeholder:text-slate-500 focus:border-[#D97706] focus:outline-none";
+  "w-full rounded-control border border-line bg-card px-4 py-3 text-ink shadow-soft placeholder:text-muted focus:border-brand-amber focus:outline-none";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -36,8 +36,8 @@ export function LoginForm() {
 
   return (
     <main className="mx-auto max-w-md px-6 py-16">
-      <h1 className="text-2xl font-bold text-[#F59E0B]">تسجيل الدخول</h1>
-      <p className="mt-2 text-sm text-slate-400">أهلاً بعودتك إلى مختبرك</p>
+      <h1 className="text-2xl font-bold text-navy">تسجيل الدخول</h1>
+      <p className="mt-2 text-sm text-muted">أهلاً بعودتك إلى مختبرك</p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
         <input
@@ -59,7 +59,7 @@ export function LoginForm() {
         />
 
         {error && (
-          <p className="rounded-lg bg-red-950/50 px-4 py-2 text-sm text-red-300" role="alert">
+          <p className="rounded-control bg-danger-soft px-4 py-2 text-sm font-medium text-danger-strong" role="alert">
             {error}
           </p>
         )}
@@ -67,19 +67,19 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-brand-amber px-6 py-3 font-medium text-white hover:bg-brand-amber-hover disabled:opacity-60"
+          className="w-full rounded-control bg-brand-amber px-6 py-3 font-semibold text-white shadow-soft transition-all hover:bg-brand-amber-hover hover:shadow-lift disabled:opacity-60"
         >
           {loading ? "جارٍ الدخول…" : "دخول"}
         </button>
       </form>
 
       <div className="mt-6 flex items-center justify-between text-sm">
-        <a href="/forgot-password" className="text-slate-500 hover:text-[#F59E0B]">
+        <a href="/forgot-password" className="text-muted hover:text-brand-amber">
           نسيت كلمة المرور؟
         </a>
-        <span className="text-slate-500">
+        <span className="text-muted">
           ليس لديك حساب؟{" "}
-          <a href="/signup" className="text-[#F59E0B] hover:underline">
+          <a href="/signup" className="font-semibold text-brand-amber hover:underline">
             إنشاء حساب
           </a>
         </span>

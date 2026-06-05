@@ -21,10 +21,10 @@ import { InferenceModeBadge } from "@/components/ops/inference-mode-badge";
 const PLAN_LABEL: Record<string, string> = { starter: "Starter", pro: "Pro" };
 
 const STATUS_STYLE: Record<string, { label: string; cls: string }> = {
-  active: { label: "نشط", cls: "bg-emerald-950 text-emerald-300" },
-  inactive: { label: "غير مفعّل", cls: "bg-amber-950 text-amber-300" },
-  past_due: { label: "متأخر الدفع", cls: "bg-orange-950 text-orange-300" },
-  paused: { label: "موقوف", cls: "bg-red-950 text-red-300" }
+  active: { label: "نشط", cls: "bg-success-soft text-success-strong" },
+  inactive: { label: "غير مفعّل", cls: "bg-amber-soft text-brand-amber-hover" },
+  past_due: { label: "متأخر الدفع", cls: "bg-amber-soft text-brand-amber-hover" },
+  paused: { label: "موقوف", cls: "bg-danger-soft text-danger-strong" }
 };
 
 // DD/MM/YYYY (MENA rule). Falls back to the raw value if unparseable.
@@ -110,29 +110,29 @@ export function FounderPanel({
   }
 
   const cards = [
-    { label: "المختبرات النشطة", value: String(stats.activeTenants), accent: "text-amber-500" },
-    { label: "الإيراد الشهري (JOD)", value: `${stats.mrrJod} د.أ`, accent: "text-emerald-400" },
+    { label: "المختبرات النشطة", value: String(stats.activeTenants), accent: "text-brand-amber" },
+    { label: "الإيراد الشهري (JOD)", value: `${stats.mrrJod} د.أ`, accent: "text-success-strong" },
     {
       label: "فواتير بانتظار التفعيل",
       value: String(stats.pendingInvoices),
-      accent: stats.pendingInvoices > 0 ? "text-amber-500" : "text-emerald-400"
+      accent: stats.pendingInvoices > 0 ? "text-brand-amber" : "text-success-strong"
     },
-    { label: "أسئلة هذا الشهر", value: String(stats.questionsThisMonth), accent: "text-indigo-400" }
+    { label: "أسئلة هذا الشهر", value: String(stats.questionsThisMonth), accent: "text-navy" }
   ];
 
   return (
-    <div className="min-h-screen bg-[#0F172A] text-slate-200">
-      <header className="flex items-center justify-between border-b border-[#334155] bg-[#1B2A3D] px-6 py-3.5">
+    <div className="min-h-screen bg-canvas text-ink">
+      <header className="flex items-center justify-between border-b border-line bg-gradient-to-l from-navy via-navy2 to-navy3 px-6 py-3.5 shadow-soft">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-amber text-sm font-bold text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-control bg-amber-bright text-sm font-bold text-navy">
             LB
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-[15px] font-bold text-slate-100">LabBrain</span>
-            <span className="text-xs text-slate-400">لوحة المؤسس</span>
+            <span className="text-[15px] font-bold text-white">LabBrain</span>
+            <span className="text-xs text-slate-300">لوحة المؤسس</span>
           </div>
         </div>
-        <div className="text-xs text-slate-400">
+        <div className="text-xs text-slate-300">
           <bdi>{founderEmail}</bdi>
         </div>
       </header>
@@ -141,7 +141,7 @@ export function FounderPanel({
         {error && (
           <div
             role="alert"
-            className="mb-5 rounded-lg border border-red-900/60 bg-red-950/30 px-4 py-3 text-sm text-red-300"
+            className="mb-5 rounded-control border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-medium text-danger-strong"
           >
             <span aria-hidden="true">⚠️ </span>
             {error}
@@ -151,9 +151,9 @@ export function FounderPanel({
         {/* Metric cards (AC-8.2) */}
         <div className="mb-7 grid grid-cols-2 gap-3 lg:grid-cols-4" aria-busy={pending}>
           {cards.map((c) => (
-            <div key={c.label} className="rounded-xl border border-[#334155] bg-[#1B2A3D] p-4">
-              <div className="mb-1.5 text-[11px] text-slate-400">{c.label}</div>
-              <div className={`text-2xl font-extrabold ${c.accent}`}>
+            <div key={c.label} className="rounded-card border border-line bg-card p-4 shadow-soft transition-all hover:shadow-lift">
+              <div className="mb-1.5 text-[11px] text-muted">{c.label}</div>
+              <div className={`text-2xl font-extrabold tracking-tight ${c.accent}`}>
                 <bdi>{c.value}</bdi>
               </div>
             </div>
@@ -182,10 +182,10 @@ export function FounderPanel({
               type="button"
               onClick={() => setTab(t.id)}
               aria-pressed={tab === t.id}
-              className={`min-h-[44px] rounded-lg px-4 text-sm font-medium ${
+              className={`min-h-[44px] rounded-control px-4 text-sm font-medium transition-colors ${
                 tab === t.id
-                  ? "bg-brand-amber text-white"
-                  : "border border-[#334155] text-slate-400 hover:text-slate-200"
+                  ? "bg-brand-amber text-white shadow-soft"
+                  : "border border-line bg-card text-muted hover:text-navy"
               }`}
             >
               {t.label}
@@ -198,15 +198,15 @@ export function FounderPanel({
           (rows.length === 0 ? (
             <EmptyCard text="لا توجد مختبرات بعد." />
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-[#334155] bg-[#1B2A3D]">
+            <div className="overflow-x-auto rounded-card border border-line bg-card shadow-soft">
               <table className="w-full border-collapse text-right">
                 <thead>
-                  <tr className="border-b border-[#334155] bg-[#0F172A]">
+                  <tr className="border-b border-line bg-canvas">
                     {["المختبر", "الخطة", "الحالة", "المستخدمون", "الوثائق", "الأسئلة", ""].map(
                       (h) => (
                         <th
                           key={h}
-                          className="px-3.5 py-2.5 text-[11px] font-semibold text-slate-400"
+                          className="px-3.5 py-2.5 text-[11px] font-semibold text-muted"
                         >
                           {h}
                         </th>
@@ -218,34 +218,34 @@ export function FounderPanel({
                   {rows.map((r) => {
                     const plan = getPlan(r.plan);
                     return (
-                      <tr key={r.tenant_id} className="border-b border-slate-800 last:border-0">
+                      <tr key={r.tenant_id} className="border-b border-line last:border-0">
                         <td className="px-3.5 py-3">
-                          <div className="text-[13px] font-semibold text-slate-100">
+                          <div className="text-[13px] font-semibold text-ink">
                             <bdi>{r.name}</bdi>
                           </div>
-                          <div className="text-[11px] text-slate-400">
+                          <div className="text-[11px] text-muted">
                             <bdi>{r.owner_email ?? "—"}</bdi>
                           </div>
                         </td>
                         <td className="px-3.5 py-3">
-                          <span className="rounded-full bg-[#1e3a5f] px-2.5 py-0.5 text-[11px] font-semibold text-[#93c5fd]">
+                          <span className="rounded-full bg-info-soft px-2.5 py-0.5 text-[11px] font-semibold text-navy">
                             <bdi>{PLAN_LABEL[r.plan] ?? r.plan}</bdi>
                           </span>
                         </td>
                         <td className="px-3.5 py-3">
                           <StatusPill status={r.status} />
                         </td>
-                        <td className="px-3.5 py-3 text-[13px] text-slate-400">
+                        <td className="px-3.5 py-3 text-[13px] text-muted">
                           <bdi>
                             {r.user_count}/{plan.seatLimit}
                           </bdi>
                         </td>
-                        <td className="px-3.5 py-3 text-[13px] text-slate-400">
+                        <td className="px-3.5 py-3 text-[13px] text-muted">
                           <bdi>
                             {r.doc_count}/{plan.docLimit}
                           </bdi>
                         </td>
-                        <td className="px-3.5 py-3 text-[13px] text-slate-400">
+                        <td className="px-3.5 py-3 text-[13px] text-muted">
                           <bdi>{r.questions_this_month}</bdi>
                         </td>
                         <td className="px-3.5 py-3">
@@ -254,7 +254,7 @@ export function FounderPanel({
                               <ActionButton
                                 onClick={() => run("activate", r.tenant_id)}
                                 disabled={busyId === r.tenant_id}
-                                className="bg-emerald-950 text-emerald-300 hover:bg-emerald-900"
+                                className="bg-success-soft text-success-strong hover:bg-success/20"
                               >
                                 تفعيل
                               </ActionButton>
@@ -263,7 +263,7 @@ export function FounderPanel({
                               <ActionButton
                                 onClick={() => run("unpause", r.tenant_id)}
                                 disabled={busyId === r.tenant_id}
-                                className="bg-emerald-950 text-emerald-300 hover:bg-emerald-900"
+                                className="bg-success-soft text-success-strong hover:bg-success/20"
                               >
                                 إعادة تفعيل
                               </ActionButton>
@@ -271,7 +271,7 @@ export function FounderPanel({
                               <ActionButton
                                 onClick={() => run("pause", r.tenant_id)}
                                 disabled={busyId === r.tenant_id}
-                                className="bg-red-950 text-red-300 hover:bg-red-900"
+                                className="bg-danger-soft text-danger-strong hover:bg-danger/20"
                               >
                                 إيقاف
                               </ActionButton>
@@ -295,13 +295,13 @@ export function FounderPanel({
               {pendingRows.map((r) => (
                 <div
                   key={r.tenant_id}
-                  className="flex flex-col gap-3 rounded-xl border border-[#D97706] bg-[#1B2A3D] p-4 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 rounded-card border border-brand-amber bg-card p-4 shadow-soft sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div>
-                    <div className="text-[15px] font-bold text-slate-100">
+                    <div className="text-[15px] font-bold text-navy">
                       <bdi>{r.name}</bdi>
                     </div>
-                    <div className="mt-1 text-xs text-slate-400">
+                    <div className="mt-1 text-xs text-muted">
                       <bdi>{r.owner_email ?? "—"}</bdi> ·{" "}
                       <bdi>
                         {PLAN_LABEL[r.plan] ?? r.plan} — {getPlan(r.plan).monthly} د.أ
@@ -312,7 +312,7 @@ export function FounderPanel({
                   <ActionButton
                     onClick={() => run("activate", r.tenant_id)}
                     disabled={busyId === r.tenant_id}
-                    className="min-h-[44px] bg-brand-amber px-5 text-[13px] font-bold text-white hover:bg-brand-amber-hover"
+                    className="min-h-[44px] bg-brand-amber px-5 text-[13px] font-bold text-white shadow-soft hover:bg-brand-amber-hover hover:shadow-lift"
                   >
                     تفعيل الحساب ✓
                   </ActionButton>
@@ -327,7 +327,7 @@ export function FounderPanel({
             <EmptyCard text="لا توجد مختبرات بعد." />
           ) : (
             <div className="flex flex-col gap-2.5">
-              <p className="mb-1 text-xs text-slate-400">
+              <p className="mb-1 text-xs text-muted">
                 نقل بيانات المختبر من الاتحاد الأوروبي (فرانكفورت) إلى السعودية
                 (me-central-1) للامتثال لـ PDPL. النقل يتحقق من تطابق البيانات قبل
                 التحويل النهائي ولا يحذف المصدر.
@@ -337,15 +337,15 @@ export function FounderPanel({
                 return (
                   <div
                     key={r.tenant_id}
-                    className="flex flex-col gap-3 rounded-xl border border-[#334155] bg-[#1B2A3D] p-4 sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col gap-3 rounded-card border border-line bg-card p-4 shadow-soft sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div>
-                      <div className="text-[15px] font-bold text-slate-100">
+                      <div className="text-[15px] font-bold text-navy">
                         <bdi>{r.name}</bdi>
                       </div>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
                         <span>المنطقة:</span>
-                        <bdi className="font-semibold text-slate-200">
+                        <bdi className="font-semibold text-ink">
                           {regionLabel(r.data_region)}
                         </bdi>
                         <span
@@ -359,16 +359,16 @@ export function FounderPanel({
                       <ActionButton
                         onClick={() => runMigration(ctrl.cta!.action, r.tenant_id)}
                         disabled={busyId === r.tenant_id}
-                        className={`min-h-[44px] px-5 text-[13px] font-bold text-white ${
+                        className={`min-h-[44px] px-5 text-[13px] font-bold text-white shadow-soft hover:shadow-lift ${
                           ctrl.cta.action === "cutover"
-                            ? "bg-indigo-700 hover:bg-indigo-600"
+                            ? "bg-navy hover:bg-navy2"
                             : "bg-brand-amber hover:bg-brand-amber-hover"
                         }`}
                       >
                         <bdi>{ctrl.cta.label}</bdi>
                       </ActionButton>
                     ) : (
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-muted">
                         {ctrl.kind === "done" ? "مكتمل" : "جارٍ التنفيذ"}
                       </span>
                     )}
@@ -407,7 +407,7 @@ function ActionButton({
 
 function EmptyCard({ text }: { text: string }) {
   return (
-    <div className="rounded-xl border border-[#334155] bg-[#1B2A3D] p-8 text-center text-sm text-slate-400">
+    <div className="rounded-card border border-line bg-card p-8 text-center text-sm text-muted shadow-soft">
       {text}
     </div>
   );

@@ -17,7 +17,7 @@ const LINKS = [
 export function NavLinks() {
   const pathname = usePathname();
   return (
-    <nav className="mt-8 space-y-1 text-slate-300">
+    <nav className="mt-8 space-y-1">
       {LINKS.map(({ href, label }) => {
         const active = pathname === href || pathname.startsWith(`${href}/`);
         return (
@@ -25,10 +25,10 @@ export function NavLinks() {
             key={href}
             href={href}
             aria-current={active ? "page" : undefined}
-            className={`flex min-h-[44px] items-center rounded-lg px-3 py-2 transition ${
+            className={`flex min-h-[44px] items-center rounded-control px-3 py-2 transition-colors ${
               active
-                ? "bg-amber-500/10 font-semibold text-amber-400"
-                : "hover:bg-slate-800/60 hover:text-amber-400"
+                ? "bg-navy font-semibold text-white shadow-soft"
+                : "text-muted hover:bg-canvas hover:text-navy"
             }`}
           >
             {label}

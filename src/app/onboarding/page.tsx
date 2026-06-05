@@ -25,18 +25,18 @@ export default async function OnboardingPage({
   return (
     <main className="mx-auto max-w-lg px-6 py-20 text-center">
       <div className="text-5xl">✅</div>
-      <h1 className="mt-4 text-2xl font-bold text-[#F59E0B]">تم تأكيد حسابك</h1>
-      <p className="mt-3 leading-7 text-slate-400">
+      <h1 className="mt-4 text-2xl font-bold text-navy">تم تأكيد حسابك</h1>
+      <p className="mt-3 leading-7 text-muted">
         {user?.email ? (
           <>
-            أهلاً <bdi className="bidi-term text-[#F59E0B]">{user.email}</bdi> — حسابك جاهز.
+            أهلاً <bdi className="bidi-term font-semibold text-brand-amber">{user.email}</bdi> — حسابك جاهز.
           </>
         ) : (
           "حسابك جاهز."
         )}{" "}
         {resumedPlanName ? (
           <>
-            أكمِل اشتراكك في خطة <bdi className="text-[#F59E0B]">{resumedPlanName}</bdi> لتفعيل
+            أكمِل اشتراكك في خطة <bdi className="font-semibold text-brand-amber">{resumedPlanName}</bdi> لتفعيل
             رفع الوثائق والأسئلة.
           </>
         ) : (
@@ -47,13 +47,13 @@ export default async function OnboardingPage({
       <div className="mt-8 flex flex-col gap-3">
         <Link
           href={resume ? resumeCheckoutHref(resume) : "/pricing"}
-          className="w-full rounded-lg bg-brand-amber px-6 py-3 font-medium text-white hover:bg-brand-amber-hover"
+          className="w-full rounded-control bg-brand-amber px-6 py-3 font-semibold text-white shadow-soft transition-all hover:bg-brand-amber-hover hover:shadow-lift"
         >
           {resumedPlanName ? `أكمل الاشتراك في خطة ${resumedPlanName}` : "اختيار الخطة"}
         </Link>
         <Link
           href="/dashboard"
-          className="w-full rounded-lg border border-[#334155] px-6 py-3 font-medium text-slate-300 hover:border-[#D97706] hover:text-[#F59E0B]"
+          className="w-full rounded-control border border-line bg-card px-6 py-3 font-medium text-ink transition-colors hover:border-brand-amber hover:text-brand-amber"
         >
           الذهاب للوحة التحكم
         </Link>
