@@ -12,10 +12,10 @@ import { useState } from "react";
 // states. Targets are ≥44px for the 375px WhatsApp-demo viewport.
 
 const field =
-  "w-full rounded-lg border border-[#334155] bg-[#0F172A] px-4 py-3 min-h-[44px] text-slate-100 placeholder:text-slate-500 focus:border-[#D97706] focus:outline-none";
+  "w-full rounded-control border border-line bg-card px-4 py-3 min-h-[44px] text-ink shadow-soft placeholder:text-muted focus:border-brand-amber focus:outline-none";
 const codeField = `${field} text-center text-2xl tracking-[0.5em] placeholder:tracking-normal`;
 const primaryBtn =
-  "w-full rounded-lg bg-brand-amber px-6 py-3 min-h-[44px] font-medium text-white hover:bg-brand-amber-hover disabled:opacity-60";
+  "w-full rounded-control bg-brand-amber px-6 py-3 min-h-[44px] font-semibold text-white shadow-soft transition-all hover:bg-brand-amber-hover hover:shadow-lift disabled:opacity-60";
 
 type Stage = "idle" | "code";
 type Flow = "enroll" | "disable";
@@ -121,25 +121,25 @@ export function MfaSettings({
   }
 
   return (
-    <section className="rounded-xl border border-[#334155] bg-[#1B2A3D] p-6">
+    <section className="rounded-card border border-line bg-card p-6 shadow-soft">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-slate-100">التحقق بخطوتين (2FA)</h2>
+        <h2 className="text-lg font-bold text-navy">التحقق بخطوتين (2FA)</h2>
         <span
           className={`rounded-full px-3 py-1 text-xs font-medium ${
-            enabled ? "bg-emerald-500/10 text-emerald-300" : "bg-slate-700/50 text-slate-400"
+            enabled ? "bg-success-soft text-success-strong" : "bg-canvas text-muted"
           }`}
         >
           {enabled ? "مُفعّل" : "غير مُفعّل"}
         </span>
       </div>
-      <p className="mt-1 text-sm text-slate-400">
+      <p className="mt-1 text-sm text-muted">
         أضف طبقة حماية إضافية: رمز يُرسل عبر رسالة نصية إلى هاتفك عند تسجيل الدخول.
       </p>
 
       <div aria-live="polite" className="mt-4 min-h-[1.25rem]">
         {error && (
           <p
-            className="rounded-lg bg-red-950/50 px-4 py-2 text-sm text-red-300"
+            className="rounded-control bg-danger-soft px-4 py-2 text-sm font-medium text-danger-strong"
             role="alert"
           >
             <span aria-hidden="true">⚠️ </span>
@@ -147,7 +147,7 @@ export function MfaSettings({
           </p>
         )}
         {info && (
-          <p className="rounded-lg bg-emerald-950/40 px-4 py-2 text-sm text-emerald-300">
+          <p className="rounded-control bg-success-soft px-4 py-2 text-sm font-medium text-success-strong">
             {info}
           </p>
         )}
@@ -181,7 +181,7 @@ export function MfaSettings({
               type="button"
               onClick={reset}
               disabled={loading}
-              className="min-h-[44px] rounded-lg border border-slate-700 px-5 text-sm text-slate-300 hover:bg-slate-800/60 disabled:opacity-60"
+              className="min-h-[44px] rounded-control border border-line px-5 text-sm text-muted transition-colors hover:bg-canvas hover:text-navy disabled:opacity-60"
             >
               إلغاء
             </button>
@@ -191,7 +191,7 @@ export function MfaSettings({
         // Enabled → offer disable (which sends a confirming OTP first).
         <div className="mt-4">
           {phone && (
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-muted">
               الهاتف المُسجّل: <bdi dir="ltr">{phone}</bdi>
             </p>
           )}
@@ -199,7 +199,7 @@ export function MfaSettings({
             type="button"
             onClick={startDisable}
             disabled={loading}
-            className="mt-4 min-h-[44px] rounded-lg border border-red-800 px-5 text-sm font-medium text-red-200 hover:bg-red-900/30 disabled:opacity-60"
+            className="mt-4 min-h-[44px] rounded-control border border-danger-strong px-5 text-sm font-medium text-danger-strong transition-colors hover:bg-danger-strong hover:text-white disabled:opacity-60"
           >
             {loading ? "جارٍ الإرسال…" : "إيقاف التحقق بخطوتين"}
           </button>
@@ -208,7 +208,7 @@ export function MfaSettings({
         // Disabled → collect a phone number and send an enrollment OTP.
         <form onSubmit={startEnroll} className="mt-4 space-y-4">
           <label className="block">
-            <span className="text-sm text-slate-300">رقم الهاتف (أردني)</span>
+            <span className="text-sm text-ink">رقم الهاتف (أردني)</span>
             <input
               className={`${field} mt-1`}
               type="tel"

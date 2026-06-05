@@ -7,7 +7,7 @@ import { useState } from "react";
 // server cooldown (429). Sent/error states are announced via aria-live. Targets are
 // ≥44px for the 375px WhatsApp-demo viewport.
 const field =
-  "w-full rounded-lg border border-[#334155] bg-[#0F172A] px-4 py-3 min-h-[44px] text-center text-2xl tracking-[0.5em] text-slate-100 placeholder:tracking-normal placeholder:text-slate-500 focus:border-[#D97706] focus:outline-none";
+  "w-full rounded-control border border-line bg-card px-4 py-3 min-h-[44px] text-center text-2xl tracking-[0.5em] text-ink shadow-soft placeholder:tracking-normal placeholder:text-muted focus:border-brand-amber focus:outline-none";
 
 export function VerifyForm() {
   const [code, setCode] = useState("");
@@ -65,8 +65,8 @@ export function VerifyForm() {
 
   return (
     <main className="mx-auto max-w-md px-6 py-16">
-      <h1 className="text-2xl font-bold text-[#F59E0B]">التحقق بخطوتين</h1>
-      <p className="mt-2 text-sm text-slate-400">
+      <h1 className="text-2xl font-bold text-navy">التحقق بخطوتين</h1>
+      <p className="mt-2 text-sm text-muted">
         أدخل الرمز المكوّن من <bdi>6</bdi> أرقام الذي أرسلناه إلى هاتفك عبر رسالة نصية.
       </p>
 
@@ -87,13 +87,13 @@ export function VerifyForm() {
 
         <div aria-live="polite" className="min-h-[1.25rem]">
           {error && (
-            <p className="rounded-lg bg-red-950/50 px-4 py-2 text-sm text-red-300" role="alert">
+            <p className="rounded-control bg-danger-soft px-4 py-2 text-sm font-medium text-danger-strong" role="alert">
               <span aria-hidden="true">⚠️ </span>
               {error}
             </p>
           )}
           {info && (
-            <p className="rounded-lg bg-emerald-950/40 px-4 py-2 text-sm text-emerald-300">
+            <p className="rounded-control bg-success-soft px-4 py-2 text-sm font-medium text-success-strong">
               {info}
             </p>
           )}
@@ -102,7 +102,7 @@ export function VerifyForm() {
         <button
           type="submit"
           disabled={loading || code.length !== 6}
-          className="w-full rounded-lg bg-brand-amber px-6 py-3 min-h-[44px] font-medium text-white hover:bg-brand-amber-hover disabled:opacity-60"
+          className="w-full rounded-control bg-brand-amber px-6 py-3 min-h-[44px] font-semibold text-white shadow-soft transition-all hover:bg-brand-amber-hover hover:shadow-lift disabled:opacity-60"
         >
           {loading ? "جارٍ التحقق…" : "تحقّق"}
         </button>
@@ -112,7 +112,7 @@ export function VerifyForm() {
         type="button"
         onClick={onResend}
         disabled={resending}
-        className="mt-6 min-h-[44px] text-sm text-slate-400 hover:text-[#F59E0B] disabled:opacity-60"
+        className="mt-6 min-h-[44px] text-sm text-muted transition-colors hover:text-brand-amber disabled:opacity-60"
       >
         {resending ? "جارٍ الإرسال…" : "لم يصلك الرمز؟ إعادة الإرسال"}
       </button>

@@ -50,25 +50,38 @@ export default function DashboardPage() {
 
   // "X / limit" for the capped counters; the questions counter is uncapped.
   // Numerals + the "/" separator are <bdi>-isolated so they don't reorder in the
-  // RTL line.
+  // RTL line. Each KPI gets a distinct accent stripe (bright amber is accent-only,
+  // never behind text — the value itself renders in navy per the reference).
   const cards = stats
     ? [
-        { label: "الوثائق", value: `${stats.documents.count} / ${stats.documents.limit}` },
-        { label: "المستخدمون", value: `${stats.users.count} / ${stats.users.limit}` },
-        { label: "الاستعلامات هذا الشهر", value: String(stats.questionsThisMonth) }
+        {
+          label: "الوثائق",
+          value: `${stats.documents.count} / ${stats.documents.limit}`,
+          accent: "bg-amber-bright"
+        },
+        {
+          label: "المستخدمون",
+          value: `${stats.users.count} / ${stats.users.limit}`,
+          accent: "bg-info"
+        },
+        {
+          label: "الاستعلامات هذا الشهر",
+          value: String(stats.questionsThisMonth),
+          accent: "bg-success"
+        }
       ]
     : [
-        { label: "الوثائق", value: "—" },
-        { label: "المستخدمون", value: "—" },
-        { label: "الاستعلامات هذا الشهر", value: "—" }
+        { label: "الوثائق", value: "—", accent: "bg-amber-bright" },
+        { label: "المستخدمون", value: "—", accent: "bg-info" },
+        { label: "الاستعلامات هذا الشهر", value: "—", accent: "bg-success" }
       ];
 
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-100">لوحة التحكم</h1>
+        <h1 className="text-2xl font-bold text-navy">لوحة التحكم</h1>
         {stats && (
-          <span className="rounded-full bg-[#1e3a5f] px-3 py-1 text-xs font-medium text-[#93c5fd]">
+          <span className="rounded-full bg-info-soft px-3 py-1 text-xs font-semibold text-navy">
             خطة <bdi>{PLAN_LABEL[stats.plan] ?? stats.plan}</bdi>
           </span>
         )}
@@ -77,16 +90,16 @@ export default function DashboardPage() {
       {error ? (
         <div
           role="alert"
-          className="mt-8 rounded-xl border border-red-900/60 bg-red-950/30 p-6 text-center"
+          className="mt-8 rounded-card border border-danger-soft bg-danger-soft p-6 text-center"
         >
           {/* icon + role=alert so the failure isn't signalled by colour alone */}
-          <p className="text-sm text-red-300">
+          <p className="text-sm font-medium text-danger-strong">
             <span aria-hidden="true">⚠️ </span>تعذّر تحميل الإحصائيات.
           </p>
           <button
             type="button"
             onClick={load}
-            className="mt-3 min-h-[44px] rounded-lg border border-red-800 px-5 text-sm font-medium text-red-200 hover:bg-red-900/30"
+            className="mt-3 min-h-[44px] rounded-control border border-danger-strong bg-card px-5 text-sm font-semibold text-danger-strong transition-colors hover:bg-danger-strong hover:text-white"
           >
             إعادة المحاولة
           </button>
@@ -96,10 +109,14 @@ export default function DashboardPage() {
           {cards.map((s) => (
             <div
               key={s.label}
-              className="rounded-xl border border-slate-700 bg-slate-900/40 p-6"
+              className="group relative overflow-hidden rounded-card border border-line bg-card p-6 shadow-soft transition-all duration-200 hover:-translate-y-[3px] hover:shadow-lift"
             >
-              <div className="text-sm text-slate-400">{s.label}</div>
-              <div className="mt-2 text-3xl font-bold text-amber-500">
+              <span
+                aria-hidden="true"
+                className={`absolute inset-y-0 start-0 w-1.5 ${s.accent}`}
+              />
+              <div className="text-sm font-medium text-muted">{s.label}</div>
+              <div className="mt-2 text-4xl font-bold tracking-tight text-navy">
                 {loading ? "…" : <bdi>{s.value}</bdi>}
               </div>
             </div>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 const field =
-  "w-full rounded-lg border border-[#334155] bg-[#0F172A] px-4 py-3 text-slate-100 placeholder:text-slate-500 focus:border-[#D97706] focus:outline-none";
+  "w-full rounded-control border border-line bg-card px-4 py-3 text-ink shadow-soft placeholder:text-muted focus:border-brand-amber focus:outline-none";
 
 type Role = "admin" | "member";
 
@@ -58,7 +58,7 @@ export function InviteForm() {
           required
         />
         <select
-          className="rounded-lg border border-[#334155] bg-[#0F172A] px-4 py-3 text-slate-100 focus:border-[#D97706] focus:outline-none"
+          className="rounded-control border border-line bg-card px-4 py-3 text-ink shadow-soft focus:border-brand-amber focus:outline-none"
           value={role}
           onChange={(e) => setRole(e.target.value as Role)}
           aria-label="دور العضو"
@@ -69,19 +69,19 @@ export function InviteForm() {
         <button
           type="submit"
           disabled={loading}
-          className="min-h-[44px] whitespace-nowrap rounded-lg bg-brand-amber px-6 py-3 font-medium text-white hover:bg-brand-amber-hover disabled:opacity-60"
+          className="min-h-[44px] whitespace-nowrap rounded-control bg-brand-amber px-6 py-3 font-semibold text-white shadow-soft transition-all hover:bg-brand-amber-hover hover:shadow-lift disabled:opacity-60"
         >
           {loading ? "جارٍ الإرسال…" : "إرسال دعوة"}
         </button>
       </div>
 
       {error && (
-        <p className="rounded-lg bg-red-950/50 px-4 py-2 text-sm text-red-300" role="alert">
+        <p className="rounded-control bg-danger-soft px-4 py-2 text-sm font-medium text-danger-strong" role="alert">
           {error}
         </p>
       )}
       {ok && (
-        <p className="rounded-lg bg-emerald-950/50 px-4 py-2 text-sm text-emerald-300" role="status">
+        <p className="rounded-control bg-success-soft px-4 py-2 text-sm font-medium text-success-strong" role="status">
           {ok}
         </p>
       )}

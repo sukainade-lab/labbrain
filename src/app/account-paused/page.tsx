@@ -4,19 +4,19 @@
 // so no <bdi> needed here.
 export default function AccountPausedPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#0F172A] px-4">
-      <div className="w-full max-w-md rounded-2xl border border-[#334155] bg-[#1B2A3D] p-8 text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#D97706]/15 text-2xl text-[#F59E0B]">
+    <main className="flex min-h-screen items-center justify-center bg-canvas px-4">
+      <div className="w-full max-w-md rounded-card border border-line bg-card p-8 text-center shadow-soft">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-soft text-2xl text-brand-amber-hover">
           ⏸
         </div>
-        <h1 className="mt-5 text-xl font-bold text-slate-100">الحساب موقوف مؤقتاً</h1>
-        <p className="mt-3 text-sm leading-6 text-slate-400">
+        <h1 className="mt-5 text-xl font-bold text-navy">الحساب موقوف مؤقتاً</h1>
+        <p className="mt-3 text-sm leading-6 text-muted">
           تم إيقاف حساب مختبرك مؤقتاً. لإعادة تفعيل الوصول، تواصل معنا وسنرجّع حسابك
           فوراً بعد ترتيب الأمر.
         </p>
         <a
           href="mailto:founder@labbrain.app"
-          className="mt-6 inline-block rounded-lg bg-brand-amber px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-amber-hover"
+          className="mt-6 inline-block rounded-control bg-brand-amber px-5 py-2.5 text-sm font-bold text-white shadow-soft transition-all hover:bg-brand-amber-hover hover:shadow-lift"
         >
           تواصل معنا
         </a>

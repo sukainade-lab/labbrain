@@ -16,17 +16,17 @@ const MODE_META: Record<
 > = {
   airgap: {
     label: "معزول (Air-gap)",
-    chip: "bg-emerald-950 text-emerald-300 border-emerald-800",
+    chip: "bg-success-soft text-success-strong border-success/30",
     icon: "🔒"
   },
   cloud: {
     label: "سحابي",
-    chip: "bg-slate-800 text-slate-300 border-slate-700",
+    chip: "bg-info-soft text-navy border-line",
     icon: "☁️"
   },
   invalid: {
     label: "إعداد غير صالح",
-    chip: "bg-red-950 text-red-300 border-red-800",
+    chip: "bg-danger-soft text-danger-strong border-danger/30",
     icon: "⚠️"
   }
 };
@@ -37,10 +37,10 @@ export function InferenceModeBadge({ view }: { view: InferenceModeView }) {
   return (
     <section
       aria-label="نمط الاستدلال"
-      className="rounded-xl border border-[#334155] bg-[#1B2A3D] p-4"
+      className="rounded-card border border-line bg-card p-4 shadow-soft"
     >
       <div className="flex items-center justify-between gap-3">
-        <div className="text-[11px] font-semibold text-slate-400">نمط الاستدلال</div>
+        <div className="text-[11px] font-semibold text-muted">نمط الاستدلال</div>
         <span
           className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${meta.chip}`}
         >
@@ -50,7 +50,7 @@ export function InferenceModeBadge({ view }: { view: InferenceModeView }) {
       </div>
 
       {view.mode === "invalid" ? (
-        <p className="mt-3 text-xs text-red-300">
+        <p className="mt-3 text-xs font-medium text-danger-strong">
           قيمة <bdi>INFERENCE_MODE</bdi> غير معروفة — راجع إعدادات النشر.
         </p>
       ) : (
@@ -67,8 +67,8 @@ export function InferenceModeBadge({ view }: { view: InferenceModeView }) {
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-slate-400">{label}</dt>
-      <dd className="mt-0.5 font-medium text-slate-200">
+      <dt className="text-muted">{label}</dt>
+      <dd className="mt-0.5 font-medium text-ink">
         <bdi>{value}</bdi>
       </dd>
     </div>

@@ -41,23 +41,32 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const brand = resolveSidebarBrand(labName, logoUrl);
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="flex w-56 flex-col border-l border-slate-800 bg-slate-900/40 p-6">
-        <div className="flex items-center gap-2">
-          {brand.logoUrl && (
+    <div className="flex min-h-screen bg-canvas">
+      <aside className="flex w-60 flex-col border-e border-line bg-card p-6 shadow-soft">
+        <div className="flex items-center gap-3">
+          {brand.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={brand.logoUrl}
               alt={brand.logoAlt}
-              width={28}
-              height={28}
-              className="h-7 w-7 shrink-0 object-contain"
+              width={36}
+              height={36}
+              className="h-9 w-9 shrink-0 rounded-control object-contain"
             />
+          ) : (
+            // Amber brand square (accent-only bright amber on navy glyph) when no
+            // custom logo — mirrors the reference's brand mark.
+            <span
+              aria-hidden="true"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-amber-bright font-bold text-navy"
+            >
+              L
+            </span>
           )}
           {brand.showWordmark ? (
-            <span className="text-lg font-bold text-amber-500">LabBrain</span>
+            <span className="text-lg font-bold text-navy">LabBrain</span>
           ) : (
-            <bdi dir="auto" className="text-lg font-bold text-amber-500">
+            <bdi dir="auto" className="text-lg font-bold text-navy">
               {brand.labName}
             </bdi>
           )}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 const field =
-  "w-full rounded-lg border border-[#334155] bg-[#0F172A] px-4 py-3 text-slate-100 placeholder:text-slate-500 focus:border-[#D97706] focus:outline-none";
+  "w-full rounded-control border border-line bg-card px-4 py-3 text-ink shadow-soft placeholder:text-muted focus:border-brand-amber focus:outline-none";
 
 export function InvoiceRequestForm({ defaultPlan }: { defaultPlan?: string }) {
   const [form, setForm] = useState({
@@ -50,8 +50,8 @@ export function InvoiceRequestForm({ defaultPlan }: { defaultPlan?: string }) {
     return (
       <div className="mx-auto max-w-md px-6 py-20 text-center">
         <div className="text-5xl">🧾</div>
-        <h1 className="mt-4 text-2xl font-bold text-[#F59E0B]">استلمنا طلبك</h1>
-        <p className="mt-3 leading-7 text-slate-400">
+        <h1 className="mt-4 text-2xl font-bold text-navy">استلمنا طلبك</h1>
+        <p className="mt-3 leading-7 text-muted">
           سيتواصل معك فريقنا قريباً بفاتورة رسمية وتفاصيل التحويل البنكي.
         </p>
       </div>
@@ -60,8 +60,8 @@ export function InvoiceRequestForm({ defaultPlan }: { defaultPlan?: string }) {
 
   return (
     <main className="mx-auto max-w-md px-6 py-16">
-      <h1 className="text-2xl font-bold text-[#F59E0B]">طلب فاتورة / تحويل بنكي</h1>
-      <p className="mt-2 text-sm text-slate-400">
+      <h1 className="text-2xl font-bold text-navy">طلب فاتورة / تحويل بنكي</h1>
+      <p className="mt-2 text-sm text-muted">
         للمختبرات التي تفضّل الدفع بالفاتورة الرسمية والتحويل البنكي بالدينار الأردني.
       </p>
 
@@ -126,12 +126,12 @@ export function InvoiceRequestForm({ defaultPlan }: { defaultPlan?: string }) {
           onChange={(e) => set("vatNumber", e.target.value)}
         />
 
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="rounded-control bg-danger-soft px-4 py-2 text-sm font-medium text-danger-strong" role="alert">{error}</p>}
 
         <button
           type="submit"
           disabled={loading}
-          className="min-h-[44px] w-full rounded-lg bg-brand-amber px-6 py-3 font-medium text-white hover:bg-brand-amber-hover disabled:opacity-60"
+          className="min-h-[44px] w-full rounded-control bg-brand-amber px-6 py-3 font-semibold text-white shadow-soft transition-all hover:bg-brand-amber-hover hover:shadow-lift disabled:opacity-60"
         >
           {loading ? "جارٍ الإرسال…" : "إرسال الطلب"}
         </button>

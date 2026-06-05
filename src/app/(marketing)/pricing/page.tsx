@@ -62,14 +62,14 @@ export default function PricingPage() {
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-20">
-      <h1 className="text-center text-3xl font-bold text-amber-500">الأسعار</h1>
-      <p className="mt-3 text-center text-slate-300">
+      <h1 className="text-center text-3xl font-bold text-navy">الأسعار</h1>
+      <p className="mt-3 text-center text-muted">
         ادفع بالدينار الأردني. ألغِ في أي وقت.
       </p>
 
       {/* Billing-interval toggle */}
       <div
-        className="mt-8 flex items-center justify-center gap-1 rounded-full border border-slate-700 bg-slate-900/40 p-1 mx-auto w-fit"
+        className="mt-8 flex items-center justify-center gap-1 rounded-full border border-line bg-card p-1 mx-auto w-fit shadow-soft"
         role="group"
         aria-label="دورة الفوترة"
       >
@@ -79,8 +79,8 @@ export default function PricingPage() {
           aria-pressed={interval === "month"}
           className={`min-h-[44px] rounded-full px-5 text-sm font-medium transition ${
             interval === "month"
-              ? "bg-brand-amber text-white"
-              : "text-slate-300 hover:text-white"
+              ? "bg-brand-amber text-white shadow-soft"
+              : "text-muted hover:text-navy"
           }`}
         >
           شهري
@@ -91,12 +91,12 @@ export default function PricingPage() {
           aria-pressed={interval === "year"}
           className={`min-h-[44px] rounded-full px-5 text-sm font-medium transition ${
             interval === "year"
-              ? "bg-brand-amber text-white"
-              : "text-slate-300 hover:text-white"
+              ? "bg-brand-amber text-white shadow-soft"
+              : "text-muted hover:text-navy"
           }`}
         >
           سنوي
-          <span className="ms-2 rounded-full bg-emerald-600/20 px-2 py-0.5 text-xs text-emerald-300">
+          <span className="ms-2 rounded-full bg-success-soft px-2 py-0.5 text-xs font-medium text-success-strong">
             وفّر {DISCOUNT_PCT}%
           </span>
         </button>
@@ -115,32 +115,32 @@ export default function PricingPage() {
           return (
             <div
               key={plan.id}
-              className={`rounded-2xl border bg-slate-900/40 p-8 ${
+              className={`rounded-card border bg-card p-8 shadow-soft transition-all hover:shadow-lift ${
                 resumed
-                  ? "border-amber-500 ring-2 ring-amber-500/50"
+                  ? "border-brand-amber ring-2 ring-brand-amber/40"
                   : plan.highlight
-                    ? "border-amber-500"
-                    : "border-slate-700"
+                    ? "border-brand-amber"
+                    : "border-line"
               }`}
             >
-              <h2 className="text-xl font-semibold text-slate-100">{plan.nameAr}</h2>
+              <h2 className="text-xl font-semibold text-navy">{plan.nameAr}</h2>
 
-              <p className="mt-4 text-3xl font-bold text-amber-500">
+              <p className="mt-4 text-3xl font-bold text-brand-amber">
                 <bdi>{perMonth}</bdi>{" "}
-                <span className="text-base font-normal text-slate-400">
+                <span className="text-base font-normal text-muted">
                   <Jod /> / شهرياً
                 </span>
               </p>
 
               {interval === "year" ? (
-                <p className="mt-1 text-sm text-slate-400">
+                <p className="mt-1 text-sm text-muted">
                   تُدفع سنوياً: <bdi>{yearTotal}</bdi> <Jod /> / سنة
                 </p>
               ) : (
-                <p className="mt-1 text-sm text-slate-500">أو وفّر {DISCOUNT_PCT}% بالاشتراك السنوي</p>
+                <p className="mt-1 text-sm text-muted">أو وفّر {DISCOUNT_PCT}% بالاشتراك السنوي</p>
               )}
 
-              <ul className="mt-6 space-y-2 text-slate-300">
+              <ul className="mt-6 space-y-2 text-ink">
                 {plan.featuresAr.map((f) => (
                   <li key={f}>• {f}</li>
                 ))}
@@ -151,7 +151,7 @@ export default function PricingPage() {
                 onClick={() => onChoosePlan(plan.id)}
                 disabled={cta.disabled}
                 aria-busy={cta.busy}
-                className="mt-8 block w-full min-h-[44px] rounded-lg bg-brand-amber px-6 py-3 text-center font-medium text-white hover:bg-brand-amber-hover disabled:opacity-60"
+                className="mt-8 block w-full min-h-[44px] rounded-control bg-brand-amber px-6 py-3 text-center font-semibold text-white shadow-soft transition-all hover:bg-brand-amber-hover hover:shadow-lift disabled:opacity-60"
               >
                 {cta.label}
               </button>
@@ -163,7 +163,7 @@ export default function PricingPage() {
       {error && (
         <p
           role="alert"
-          className="mt-6 flex items-center justify-center gap-2 text-center text-sm text-red-400"
+          className="mt-6 flex items-center justify-center gap-2 text-center text-sm font-medium text-danger-strong"
         >
           {/* icon + role=alert so the failure isn't signalled by colour alone */}
           <span aria-hidden="true">⚠️</span>
@@ -171,9 +171,9 @@ export default function PricingPage() {
         </p>
       )}
 
-      <p className="mt-10 text-center text-sm text-slate-400">
+      <p className="mt-10 text-center text-sm text-muted">
         تفضّل الدفع بفاتورة رسمية وتحويل بنكي؟{" "}
-        <Link href="/invoice-request" className="text-amber-500 hover:underline">
+        <Link href="/invoice-request" className="font-semibold text-brand-amber hover:underline">
           اطلب فاتورة
         </Link>
       </p>

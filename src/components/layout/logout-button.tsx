@@ -21,7 +21,7 @@ export function LogoutButton() {
     <button
       onClick={onClick}
       disabled={loading}
-      className="block w-full text-right text-slate-400 hover:text-[#F59E0B] disabled:opacity-60"
+      className="flex min-h-[44px] w-full items-center rounded-control px-3 text-start text-muted transition-colors hover:bg-danger-soft hover:text-danger-strong disabled:opacity-60"
     >
       {loading ? "جارٍ الخروج…" : "تسجيل الخروج"}
     </button>

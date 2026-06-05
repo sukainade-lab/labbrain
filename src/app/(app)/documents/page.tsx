@@ -23,12 +23,14 @@ interface DocsResponse {
   limit: number;
 }
 
+// Light-theme status pills: soft tint + AA-dark text. Status is also conveyed by
+// the label text itself (never colour alone) per L9.
 const STATUS: Record<DocRow["status"], { label: string; bg: string; color: string }> = {
-  pending: { label: "بالانتظار", bg: "#1e3a5f", color: "#93c5fd" },
-  parsing: { label: "يُحلَّل...", bg: "#1e3a5f", color: "#93c5fd" },
-  indexing: { label: "يُعالَج...", bg: "#1e3a5f", color: "#93c5fd" },
-  ready: { label: "جاهز", bg: "#064e3b", color: "#6ee7b7" },
-  failed: { label: "خطأ", bg: "#7f1d1d", color: "#fca5a5" }
+  pending: { label: "بالانتظار", bg: "#E7EDF7", color: "#1E3A5F" },
+  parsing: { label: "يُحلَّل...", bg: "#E7EDF7", color: "#1E3A5F" },
+  indexing: { label: "يُعالَج...", bg: "#E7EDF7", color: "#1E3A5F" },
+  ready: { label: "جاهز", bg: "#DBF1E8", color: "#166049" },
+  failed: { label: "خطأ", bg: "#FBE2DC", color: "#B91C1C" }
 };
 
 // A document is still moving through the pipeline (poll until terminal).
@@ -168,12 +170,12 @@ export default function DocumentsPage() {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-100">وثائق المختبر</h1>
+        <h1 className="text-2xl font-bold text-navy">وثائق المختبر</h1>
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className="min-h-[44px] rounded-lg bg-brand-amber px-5 text-sm font-semibold text-white transition hover:bg-brand-amber-hover disabled:opacity-60"
+          className="min-h-[44px] rounded-control bg-brand-amber px-5 text-sm font-semibold text-white shadow-soft transition-all hover:bg-brand-amber-hover hover:shadow-lift disabled:opacity-60"
         >
           {uploading ? "جارٍ الرفع..." : "+ رفع وثيقة"}
         </button>
@@ -201,21 +203,21 @@ export default function DocumentsPage() {
         />
       </div>
 
-      <p className="mt-2 text-xs text-slate-400">PDF أو DOCX أو XLSX — حتى 50 ميغابايت لكل ملف.</p>
+      <p className="mt-2 text-xs text-muted">PDF أو DOCX أو XLSX — حتى 50 ميغابايت لكل ملف.</p>
 
       {error && (
-        <div className="mt-4 rounded-lg border border-[#92400e] bg-[#3b1c08] px-4 py-3 text-sm text-[#fcd34d]">
+        <div className="mt-4 rounded-control border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-medium text-danger-strong">
           {error}
         </div>
       )}
 
       <div className="mt-6 flex flex-col gap-2">
         {loading ? (
-          <div className="rounded-xl border border-[#334155] bg-[#1B2A3D] p-6 text-center text-sm text-slate-400">
+          <div className="rounded-card border border-line bg-card p-6 text-center text-sm text-muted shadow-soft">
             جارٍ التحميل...
           </div>
         ) : docs.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-[#334155] bg-[#1B2A3D] p-8 text-center text-sm text-slate-400">
+          <div className="rounded-card border border-dashed border-line bg-card p-8 text-center text-sm text-muted">
             لا توجد وثائق بعد. ارفع أول وثيقة لمختبرك لتبدأ.
           </div>
         ) : (
@@ -226,27 +228,30 @@ export default function DocumentsPage() {
               <div
                 key={doc.id}
                 id={`doc-${doc.id}`}
-                className={`flex items-center justify-between gap-3 rounded-xl border bg-[#1B2A3D] px-4 py-3 transition ${
+                className={`flex items-center justify-between gap-3 rounded-card border bg-card px-4 py-3 shadow-soft transition-all hover:shadow-lift ${
                   doc.id === highlightId
-                    ? "border-[#F59E0B] ring-2 ring-[#F59E0B]/50"
-                    : "border-[#334155]"
+                    ? "border-brand-amber ring-2 ring-brand-amber/40"
+                    : "border-line"
                 }`}
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <div
                     dir="ltr"
-                    className="flex h-9 w-9 flex-none items-center justify-center rounded-md text-[11px] font-bold uppercase text-[#fca5a5]"
-                    style={{ background: ext === "pdf" ? "#7f1d1d" : "#14532d" }}
+                    className="flex h-9 w-9 flex-none items-center justify-center rounded-md text-[11px] font-bold uppercase"
+                    style={{
+                      background: ext === "pdf" ? "#FBE2DC" : "#DBF1E8",
+                      color: ext === "pdf" ? "#B91C1C" : "#166049"
+                    }}
                   >
                     {ext}
                   </div>
                   <div className="min-w-0">
                     {/* <bdi> isolates mixed-script filenames (e.g. English SOP names)
                         so the .pdf / digits don't reorder inside the RTL row. */}
-                    <bdi className="block truncate text-sm font-medium text-slate-100">
+                    <bdi className="block truncate text-sm font-semibold text-ink">
                       {doc.filename}
                     </bdi>
-                    <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-400">
+                    <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted">
                       <span>
                         {/* Ready docs always show their page count (matches the
                             reference); pre-ready rows have no count yet. */}
@@ -257,7 +262,7 @@ export default function DocumentsPage() {
                           Latin digit is <bdi>-isolated so it can't reorder in RTL
                           (L5). version starts at 1 → badge only from نسخة 2 up. */}
                       {doc.version > 1 && (
-                        <span className="rounded bg-[#1e3a5f] px-1.5 py-0.5 font-medium text-[#93c5fd]">
+                        <span className="rounded bg-info-soft px-1.5 py-0.5 font-semibold text-navy">
                           نسخة <bdi>{doc.version}</bdi>
                         </span>
                       )}
@@ -282,7 +287,7 @@ export default function DocumentsPage() {
                     }}
                     disabled={ACTIVE.includes(doc.status)}
                     aria-label={`استبدال ${doc.filename}`}
-                    className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center px-1 text-slate-300 transition hover:text-[#fcd34d] disabled:opacity-40"
+                    className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center px-1 text-sm font-medium text-muted transition hover:text-brand-amber disabled:opacity-40"
                   >
                     استبدال
                   </button>
@@ -290,7 +295,7 @@ export default function DocumentsPage() {
                     type="button"
                     onClick={() => onDelete(doc.id)}
                     aria-label={`حذف ${doc.filename}`}
-                    className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-slate-400 transition hover:text-[#fca5a5]"
+                    className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-sm font-medium text-muted transition hover:text-danger-strong"
                   >
                     حذف
                   </button>
@@ -302,7 +307,7 @@ export default function DocumentsPage() {
       </div>
 
       {!loading && (
-        <div className="mt-4 rounded-lg bg-[#1e3a5f] px-4 py-2.5 text-xs text-[#93c5fd]">
+        <div className="mt-4 rounded-control bg-info-soft px-4 py-2.5 text-xs font-medium text-navy">
           {docs.length} / {limit} وثيقة · خطة {planLabel} · الاستخدام {usagePct}%
         </div>
       )}
