@@ -7,6 +7,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      # Pass the PUBLIC NEXT_PUBLIC_* values from the VPS .env into the build so
+      # they get inlined into the client bundle (they cannot come from env_file,
+      # which only applies at runtime). docker-compose reads ./.env for ${...}.
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+        NEXT_PUBLIC_POSTHOG_KEY: ${NEXT_PUBLIC_POSTHOG_KEY:-}
+        NEXT_PUBLIC_POSTHOG_HOST: ${NEXT_PUBLIC_POSTHOG_HOST:-}
     # Stable tag so deploy.sh can retag the previous image for a real rollback.
     image: labbrain-app:latest
     restart: unless-stopped
