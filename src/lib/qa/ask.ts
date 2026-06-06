@@ -6,9 +6,25 @@ import { buildCitations, type Citation } from "./citations";
 import { NOT_FOUND, isNotFoundAnswer } from "./prompt";
 import type { RetrievedChunk } from "./types";
 
-// AC-3.2 — top-5 chunks, cosine similarity gate at 0.75.
+// AC-3.2 — top-5 chunks, cosine similarity gate.
 export const MATCH_COUNT = 5;
-export const SIMILARITY_THRESHOLD = 0.75;
+// Cosine gate, calibrated for text-embedding-3-small (the embedding model in use).
+//
+// A short user question vs a long document passage scores in ~0.30–0.55 cosine
+// even for a genuine on-topic match with this model — far below 0.75. The original
+// 0.75 gate sat at the top of the achievable range and STARVED retrieval: in
+// production (tenant with the ISO/IEC 17025 standard indexed, 64 healthy chunks)
+// only 1 of 17 questions cleared it (5.9% found-rate), and that one match scraped
+// in at 0.756. Questions answerable straight from the document ("what is
+// impartiality?", "what is the management system requirement?") were all refused.
+//
+// 0.35 restores recall. This does NOT weaken the zero-hallucination contract: the
+// real precision guard is the LLM grounding contract (answer ONLY from excerpts +
+// isNotFoundAnswer canonicalisation, prompt.ts), which still refuses anything the
+// retrieved text does not support. The gate is only a coarse pre-filter that keeps
+// wholly-irrelevant chunks out of the model's context. Regression-pinned in
+// tests/story-3-qa-calibration.test.ts.
+export const SIMILARITY_THRESHOLD = 0.35;
 
 export interface QaResult {
   answer: string;
@@ -51,7 +67,7 @@ export async function ask(params: {
   let emptyCorpus = false;
 
   if (chunks.length === 0) {
-    // AC-3.5 (P0 safety contract) — nothing cleared the 0.75 gate. Return the
+    // AC-3.5 (P0 safety contract) — nothing cleared the similarity gate. Return the
     // "not found" message in the user's language and DO NOT call the model. There
     // is no general-knowledge fallback path, by design.
     answer = NOT_FOUND[lang];

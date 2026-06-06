@@ -95,13 +95,13 @@ A Weekend MVP is shippable when all 7 loops are wired end-to-end:
 
 **AC-3.1** — Question input accepts Arabic and English text. The UI is RTL by default; English input switches to LTR inline. No language-selection toggle required — the system detects language automatically.
 
-**AC-3.2** — On submission, the system performs a pgvector similarity search filtered to the tenant's document chunks (top-5 results, cosine similarity threshold ≥ 0.75). Retrieved chunks are passed to GPT-4o-mini with a strict system prompt.
+**AC-3.2** — On submission, the system performs a pgvector similarity search filtered to the tenant's document chunks (top-5 results, cosine similarity threshold ≥ 0.35). Retrieved chunks are passed to GPT-4o-mini with a strict system prompt. _(Threshold recalibrated 2026-06-06 from the initial 0.75 guess to 0.35 based on production evidence: with text-embedding-3-small a short question vs a long passage scores ~0.30–0.55 even for a genuine match, so 0.75 starved retrieval to a 5.9% found-rate. The zero-hallucination guarantee is enforced by the LLM grounding contract (AC-3.3), not the gate; the gate is a coarse pre-filter.)_
 
 **AC-3.3** — The system prompt instructs the AI: "Answer only from the provided document excerpts. If the answer is not present, respond with: 'لم أجد إجابة لهذا السؤال في وثائقكم.' Do not generate information not present in the source."
 
 **AC-3.4** — Every answer includes a citation block: document name, section (if available), page number. Citation is displayed as a styled badge below the answer. Format: `📄 [Document Name] — الصفحة [N]`.
 
-**AC-3.5** — If no relevant chunk scores above the threshold (0.75), the system returns the "not found" message in the user's language. It does NOT attempt to answer from general AI knowledge.
+**AC-3.5** — If no relevant chunk scores above the threshold (0.35, see AC-3.2), the system returns the "not found" message in the user's language. It does NOT attempt to answer from general AI knowledge.
 
 **AC-3.6** — Arabic answers are displayed RTL with IBM Plex Arabic font. English technical terms within Arabic answers (ISO 17025, calibration, uncertainty) are BiDi-isolated inline (LTR within RTL sentence).
 
