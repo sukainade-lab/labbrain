@@ -20,6 +20,9 @@ next-env.d.ts
 # secrets
 /docs/secrets/
 
+# claude local machine settings (per-machine permission rules — never commit)
+.claude/settings.local.json
+
 # logs
 *.log
 .bootstrap-dev.log
