@@ -1,0 +1,66 @@
+name: Deploy to Contabo
+
+# Code-only continuous deployment to the Contabo VPS (Germany/EU).
+#
+# Governance is preserved by the `production` GitHub Environment: it requires a
+# founder review click before the deploy job runs, which replaces the typed
+# per-deploy authorization. Database DDL is NOT touched here — migrations stay
+# manual and founder-gated (apply via Supabase before merging schema changes).
+#
+# Required GitHub *secrets* (Settings -> Secrets and variables -> Actions):
+#   VPS_SSH_HOST  — VPS hostname or IP
+#   VPS_SSH_USER  — non-root deploy user (member of the docker group)
+#   VPS_SSH_KEY   — the PRIVATE ed25519 deploy key (public half in VPS authorized_keys)
+#   VPS_SSH_PORT  — SSH port (e.g. 22)
+# Required GitHub *variable*:
+#   PRODUCTION_URL — e.g. https://app.example.com (no trailing slash)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Protected environment -> founder must approve each run before it starts.
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_SSH_HOST }}
+          username: ${{ secrets.VPS_SSH_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/labbrain
+            git fetch origin main
+            git checkout main
+            git pull --ff-only origin main
+            # MIGRATIONS_APPLIED=1: schema DDL is applied out-of-band (founder-gated,
+            # before merge). deploy.sh hard-refuses without this flag.
+            MIGRATIONS_APPLIED=1 ./deploy.sh
+
+      - name: Verify health
+        run: |
+          url="${{ vars.PRODUCTION_URL }}/api/health"
+          for i in $(seq 1 12); do
+            code=$(curl -fsS -o /dev/null -w "%{http_code}" "$url" || true)
+            if [ "$code" = "200" ]; then
+              echo "/api/health returned 200"
+              exit 0
+            fi
+            echo "waiting for health ($i/12) — got '$code'"
+            sleep 5
+          done
+          echo "/api/health never reached 200 — check the VPS (deploy.sh auto-rolls-back on its own health gate)"
+          exit 1
