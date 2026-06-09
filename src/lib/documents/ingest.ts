@@ -9,7 +9,29 @@ type Admin = ReturnType<typeof createAdminClient>;
 
 export const DOCUMENTS_BUCKET = "documents";
 
-export interface CreateDocumentInput {
+// S18 workspace tags carried by a document (AC-2.4). `existing` = the permanent
+// "خدماتي الحالية" panel (service_tab_id NULL); `new_service` = a dynamic "خدمة
+// جديدة" tab (service_tab_id points at the owning service_tabs row). docSection is
+// free text validated app-side per panel (src/lib/validation/workspace.ts).
+export type PanelType = "existing" | "new_service";
+
+export interface WorkspaceTags {
+  panelType?: PanelType;
+  serviceTabId?: string | null;
+  docSection?: string;
+}
+
+// Resolve the persisted defaults for a document's workspace tags. Mirrors the
+// migration-0017 column defaults so an untagged upload lands in Existing Services.
+function resolveWorkspaceTags(tags: WorkspaceTags = {}) {
+  return {
+    panel_type: tags.panelType ?? "existing",
+    service_tab_id: tags.serviceTabId ?? null,
+    doc_section: tags.docSection ?? "references"
+  };
+}
+
+export interface CreateDocumentInput extends WorkspaceTags {
   admin: Admin;
   tenantId: string;
   file: Blob;
@@ -32,7 +54,10 @@ export async function createDocument({
   tenantId,
   file,
   filename,
-  mimeType
+  mimeType,
+  panelType,
+  serviceTabId,
+  docSection
 }: CreateDocumentInput): Promise<CreateDocumentResult> {
   await assertDocAvailable(admin, tenantId); // throws DocLimitError when at cap
 
@@ -46,12 +71,15 @@ export async function createDocument({
   if (upErr) throw new Error(`storage upload failed: ${upErr.message}`);
 
   // Row starts at 'parsing' (AC-2.2 pipeline). The UI polls it to 'ready'.
+  // Workspace tags (AC-2.4) are stamped here; chunks inherit them from this row
+  // at index time (processDocument reads them back — single source of truth).
   const { error: insErr } = await admin.from("documents").insert({
     id: documentId,
     tenant_id: tenantId,
     filename,
     storage_path: storagePath,
-    status: "parsing"
+    status: "parsing",
+    ...resolveWorkspaceTags({ panelType, serviceTabId, docSection })
   });
   if (insErr) {
     await admin.storage.from(DOCUMENTS_BUCKET).remove([storagePath]);
@@ -73,6 +101,24 @@ export interface ProcessDocumentResult {
   status: "ready";
   pageCount: number;
   chunkCount: number;
+}
+
+// Read a document's workspace tags (AC-2.4). Chunks are stamped from these so
+// the parent document row stays the single source of truth for panel/tab.
+async function readDocumentTags(
+  admin: Admin,
+  documentId: string
+): Promise<{ panel_type: PanelType; service_tab_id: string | null }> {
+  const { data, error } = await admin
+    .from("documents")
+    .select("panel_type, service_tab_id")
+    .eq("id", documentId)
+    .single();
+  if (error) throw new Error(`document tags read failed: ${error.message}`);
+  return {
+    panel_type: (data?.panel_type as PanelType) ?? "existing",
+    service_tab_id: (data?.service_tab_id as string | null) ?? null
+  };
 }
 
 // Flip a document's status, throwing on a failed write so a silently-failed
@@ -105,6 +151,10 @@ export async function processDocument({
     const { blocks, pageCount } = await parseDocument(file, filename);
     await setDocumentStatus(admin, documentId, { status: "indexing", page_count: pageCount });
 
+    // Read the parent document's workspace tags so every chunk inherits them
+    // (AC-2.4 — denormalized from the parent for S19's panel-scoped pre-filter).
+    const tags = await readDocumentTags(admin, documentId);
+
     // Chunk + embed + persist (AC-2.3).
     const chunks = chunkBlocks(blocks);
     if (chunks.length > 0) {
@@ -123,6 +173,8 @@ export async function processDocument({
         content: c.content,
         page_number: c.pageNumber,
         section: c.section,
+        panel_type: tags.panel_type,
+        service_tab_id: tags.service_tab_id,
         embedding: toVectorLiteral(embeddings[i])
       }));
       const { error: chErr } = await admin.from("document_chunks").insert(rows);

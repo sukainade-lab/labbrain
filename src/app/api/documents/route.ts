@@ -2,7 +2,9 @@ import { NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { uploadMetaSchema, MAX_UPLOAD_BYTES, resolveMime } from "@/lib/validation/documents";
+import { documentWorkspaceSchema } from "@/lib/validation/workspace";
 import { createDocument, processDocument } from "@/lib/documents/ingest";
+import { tenantOwnsServiceTab } from "@/lib/workspace/service-tabs";
 import { DocLimitError, getDocPlanLimit } from "@/lib/documents/limits";
 import { track } from "@/lib/analytics/posthog-server";
 import { documentUploaded } from "@/lib/analytics/events";
@@ -58,15 +60,44 @@ export async function POST(req: Request) {
     );
   }
 
+  // Workspace tags (AC-2.4) — which panel/tab/section the file is filed under.
+  // Untagged uploads default to Existing Services / references (AC-2.8). Empty
+  // form values are normalized to undefined so the schema defaults apply.
+  const rawTab = (form.get("service_tab_id") as string | null)?.trim() || undefined;
+  const ws = documentWorkspaceSchema.safeParse({
+    panel_type: (form.get("panel_type") as string | null)?.trim() || undefined,
+    service_tab_id: rawTab,
+    doc_section: (form.get("doc_section") as string | null)?.trim() || undefined
+  });
+  if (!ws.success) {
+    return NextResponse.json(
+      { error: ws.error.issues[0]?.message ?? "بيانات غير صالحة" },
+      { status: 400 }
+    );
+  }
+
   try {
     const admin = createAdminClient();
+
+    // A New Service upload must target a tab THIS tenant owns — never trust the
+    // client-supplied id (AC-2.4 / AC-2.5). Foreign/unknown tab → 400.
+    if (ws.data.panel_type === "new_service") {
+      const owns = await tenantOwnsServiceTab(admin, me.tenant_id, ws.data.service_tab_id!);
+      if (!owns) {
+        return NextResponse.json({ error: "تبويب الخدمة غير موجود" }, { status: 400 });
+      }
+    }
+
     // Synchronous half: cap check + store + create the 'parsing' row.
     const { documentId, status } = await createDocument({
       admin,
       tenantId: me.tenant_id,
       file,
       filename: meta.data.filename,
-      mimeType: meta.data.mimeType
+      mimeType: meta.data.mimeType,
+      panelType: ws.data.panel_type,
+      serviceTabId: ws.data.service_tab_id ?? null,
+      docSection: ws.data.doc_section
     });
 
     // Parse + index off the response path so a slow LlamaParse poll never holds
@@ -115,7 +146,9 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("documents")
-    .select("id, filename, status, page_count, version, created_at")
+    .select(
+      "id, filename, status, page_count, version, created_at, panel_type, service_tab_id, doc_section"
+    )
     .order("created_at", { ascending: false });
   if (error) return NextResponse.json({ error: "تعذّر جلب الوثائق" }, { status: 500 });
 
