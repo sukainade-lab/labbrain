@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { detectLang, type Lang } from "./lang";
 import { embedTexts, toVectorLiteral } from "@/lib/ai/embeddings";
 import { generateAnswer } from "@/lib/ai/answer";
+import { translateQuery } from "./translate";
+import { mergeRetrieved } from "./merge";
 import { buildCitations, type Citation } from "./citations";
 import { NOT_FOUND, isNotFoundAnswer } from "./prompt";
 import type { RetrievedChunk } from "./types";
@@ -25,6 +27,27 @@ export const MATCH_COUNT = 5;
 // wholly-irrelevant chunks out of the model's context. Regression-pinned in
 // tests/story-3-qa-calibration.test.ts.
 export const SIMILARITY_THRESHOLD = 0.35;
+
+// S17 — bilingual (cross-lingual) query expansion kill-switch. Default ON. Set
+// QA_BILINGUAL_EXPANSION to "0", "false", or "off" (case-insensitive) to disable
+// and fall back to single-embedding retrieval (today's behaviour). The env var is
+// read at call time so an operator can flip it without a redeploy.
+export function bilingualExpansionEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  const v = (env.QA_BILINGUAL_EXPANSION ?? "").trim().toLowerCase();
+  return !(v === "0" || v === "false" || v === "off");
+}
+
+// One tenant-filtered retrieval pass. Reuses the existing, isolation-tested
+// match_document_chunks RPC (migration 0004) — S17 adds NO schema or RPC changes.
+async function retrieve(supabase: SupabaseClient, embedding: number[]): Promise<RetrievedChunk[]> {
+  const { data, error } = await supabase.rpc("match_document_chunks", {
+    query_embedding: toVectorLiteral(embedding),
+    match_count: MATCH_COUNT,
+    similarity_threshold: SIMILARITY_THRESHOLD
+  });
+  if (error) throw new Error(`retrieval failed: ${error.message}`);
+  return (data ?? []) as RetrievedChunk[];
+}
 
 export interface QaResult {
   answer: string;
@@ -50,16 +73,25 @@ export async function ask(params: {
   const { supabase, tenantId, userId, question } = params;
   const lang = detectLang(question);
 
-  const [embedding] = await embedTexts([question]);
-  if (!embedding) throw new Error("failed to embed the question");
+  // S17 — cross-lingual query expansion (app-side union). When enabled (default),
+  // translate the question into the OTHER project language and embed BOTH forms in a
+  // single batched call, then run match_document_chunks once per embedding IN PARALLEL
+  // and merge the result sets (dedupe by id, keep the highest similarity). This closes
+  // the measured gap where an Arabic question against an English standard scores below
+  // the gate purely for lack of shared tokens.
+  //
+  // Fail-open: translateQuery returns null on any miss (model error/empty/echo, or the
+  // kill-switch off), in which case we embed + retrieve once — exactly today's path. The
+  // answer is always generated from the ORIGINAL question in the user's language (the
+  // translation is an internal retrieval aid only, AC-17.4 / AC-17.6).
+  const translated = bilingualExpansionEnabled() ? await translateQuery(question, lang) : null;
+  const queries = translated ? [question, translated] : [question];
 
-  const { data, error } = await supabase.rpc("match_document_chunks", {
-    query_embedding: toVectorLiteral(embedding),
-    match_count: MATCH_COUNT,
-    similarity_threshold: SIMILARITY_THRESHOLD
-  });
-  if (error) throw new Error(`retrieval failed: ${error.message}`);
-  const chunks = (data ?? []) as RetrievedChunk[];
+  const embeddings = await embedTexts(queries);
+  if (!embeddings[0]) throw new Error("failed to embed the question");
+
+  const resultSets = await Promise.all(embeddings.map((embedding) => retrieve(supabase, embedding)));
+  const chunks = mergeRetrieved(resultSets, MATCH_COUNT);
 
   let answer: string;
   let citations: Citation[];

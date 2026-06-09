@@ -18,6 +18,7 @@ Copy `.env.example` → `.env.local` and fill. Never commit `.env.local`.
 | `AIRGAP_EMBEDDING_DIM` | You (airgap only) | The local model's vector dimension. Validated at startup to equal the pgvector column (1536) — a mismatch throws, so a wrong model can't corrupt the index (S11/AC-11.6) |
 | `AIRGAP_ANSWER_MODEL` | The on-host Ollama model registry (airgap only) | Local chat/answer model (S11/AC-11.3) |
 | `LLAMAPARSE_BASE_URL` | cloud.llamaindex.ai (override) **or** the on-prem LlamaParse instance | **Cloud:** OPTIONAL override of the hosted LlamaParse base. **Airgap:** REQUIRED — points at the self-hosted instance so document bytes never leave the host (S11/AC-11.4) |
+| `QA_BILINGUAL_EXPANSION` | You (deploy config) | Not a secret. Kill-switch for cross-lingual query expansion. **Default ON** (unset = enabled): an AR question is also translated to EN (and vice-versa) so retrieval matches an English standard with an Arabic question. `0`/`false`/`off` (case-insensitive) disables it → single-embedding retrieval. Translation rides the answer seam, honouring `INFERENCE_MODE` (S17/AC-17.7) |
 | `RESEND_API_KEY` | resend.com → API keys | Transactional email |
 | `RESEND_FROM_EMAIL` | You | Verified sender domain in Resend |
 | `STRIPE_SECRET_KEY` | dashboard.stripe.com → Developers → API keys | `sk_test_…` in dev |
