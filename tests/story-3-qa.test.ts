@@ -18,6 +18,11 @@ vi.mock("@/lib/ai/embeddings", async (importOriginal) => {
 // generateAnswer is mocked: the live test verifies the orchestration contract
 // (when it is called, with what), not the model's wording.
 vi.mock("@/lib/ai/answer", () => ({ generateAnswer: vi.fn() }));
+// S17 — translateQuery is mocked to null so this pre-S17 live test exercises the
+// single-embedding retrieval contract deterministically (the bilingual fail-open
+// path), regardless of whether a real OPENAI_API_KEY is present in the live env.
+// Bilingual expansion has its own coverage in tests/story-17-*.
+vi.mock("@/lib/qa/translate", () => ({ translateQuery: vi.fn().mockResolvedValue(null) }));
 
 import { ask } from "@/lib/qa/ask";
 import { embedTexts } from "@/lib/ai/embeddings";

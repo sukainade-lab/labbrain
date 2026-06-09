@@ -170,6 +170,7 @@ A Weekend MVP is shippable when all 7 loops are wired end-to-end:
 | S14 | Slack/email digest — weekly summary of top questions asked (for lab QA review) | notify |
 | S15 | API access — REST endpoints for enterprise integrations (LIMS, ERP) | domain |
 | S16 | Webinar demo flow — group demo booking + recording distribution (Waitlist Heat motion) | domain |
+| S17 | Bilingual (cross-lingual) query expansion — retrieve with the question in both Arabic and English and union the results, so an Arabic question against an English standard (and vice-versa) is answered instead of refused. Surfaced by the PR #35 live measurement (cross-lingual recall gap). See `docs/stories/S17.md` for AC-17.1…17.8. | domain |
 
 ---
 
